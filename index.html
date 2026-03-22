@@ -17,10 +17,8 @@
 <div class="max-w-7xl mx-auto">
   <h1 class="text-2xl font-bold mb-4">🏡 Property Dashboard</h1>
 
-  <!-- Controls -->
   <div class="bg-white p-3 rounded-xl shadow mb-4 flex flex-wrap gap-2 items-center">
 
-    <!-- SORTING -->
     <select id="sortBy" onchange="applyFilters()" class="border p-2 rounded">
       <option value="score_desc" selected>Score (desc)</option>
       <option value="score_asc">Score (asc)</option>
@@ -30,14 +28,10 @@
       <option value="first_seen_asc">First Seen (asc)</option>
     </select>
 
-    <!-- SOURCE FILTER ONLY -->
     <select id="locationFilter" onchange="applyFilters()" class="border p-2 rounded">
       <option value="">All Sources</option>
     </select>
 
-    
-
-    <!-- View toggle radio -->
     <div class="flex items-center gap-2 ml-4">
       <label class="flex items-center gap-1">
         <input type="radio" name="view" value="grid" checked onchange="toggleView('grid')"> Tiles
@@ -153,7 +147,7 @@ function render(){
 
     d.className = viewMode === 'grid'
       ? "bg-white p-3 rounded-xl shadow cursor-pointer"
-      : "bg-white p-3 rounded-xl shadow cursor-pointer grid grid-cols-4 gap-4 items-center";
+      : "bg-white p-3 rounded-xl shadow cursor-pointer";
 
     if(selectedId===p.link) d.classList.add("selected-tile");
 
@@ -188,23 +182,29 @@ function render(){
         <img src="${thumb}" class="w-full h-32 object-cover rounded mb-2" onerror="this.src='https://via.placeholder.com/300x200'" />
         ${details}
         <div class="mt-2">
-          <button onclick="window.open('${p.link}','_blank');event.stopPropagation();" class="bg-blue-500 text-white px-3 py-1 rounded w-full">View</button>
+          <button onclick="window.open('${p.link}','_blank');event.stopPropagation();" 
+            class="bg-blue-500 text-white px-3 py-1 rounded w-full">
+            View
+          </button>
         </div>
       `
       : `
-        <img src="${thumb}" class="w-full h-20 object-cover rounded" onerror="this.src='https://via.placeholder.com/150'" />
-        <div class="col-span-2">${details}</div>
-        <div class="flex justify-end items-center">
-          <button onclick="window.open('${p.link}','_blank');event.stopPropagation();" class="bg-blue-500 text-white px-3 py-1 rounded">View</button>
-        </div>
-      `;event.stopPropagation();" class="bg-blue-500 text-white px-3 py-1 rounded w-full">View</button>
-        </div>
-      `
-      : `
-        <img src="${thumb}" class="w-full h-20 object-cover rounded" onerror="this.src='https://via.placeholder.com/150'" />
-        <div class="col-span-2">${details}</div>
-        <div class="flex justify-end">
-          <button onclick="window.open('${p.link}','_blank');event.stopPropagation();" class="bg-blue-500 text-white px-3 py-1 rounded">View</button>
+        <div class="grid grid-cols-4 gap-4 items-center w-full">
+          
+          <img src="${thumb}" class="w-full h-20 object-cover rounded" 
+            onerror="this.src='https://via.placeholder.com/150'" />
+
+          <div class="col-span-2 text-sm">
+            ${details}
+          </div>
+
+          <div class="flex justify-end">
+            <button onclick="window.open('${p.link}','_blank');event.stopPropagation();" 
+              class="bg-blue-500 text-white px-3 py-1 rounded">
+              View
+            </button>
+          </div>
+
         </div>
       `;
 
