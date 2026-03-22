@@ -18,9 +18,10 @@
   <h1 class="text-2xl font-bold mb-4">🏡 Property Dashboard</h1>
 
   <!-- Controls -->
-  <div class="bg-white p-3 rounded-xl shadow mb-4 flex flex-wrap gap-2">
+  <div class="bg-white p-3 rounded-xl shadow mb-4 flex flex-wrap gap-2 items-center">
+
     <select id="sortBy" onchange="applyFilters()" class="border p-2 rounded">
-      <option value="score">Score</option>
+      <option value="score" selected>Score</option>
       <option value="price">Price</option>
       <option value="first_seen">First Seen</option>
       <option value="beds">Bedrooms</option>
@@ -36,8 +37,16 @@
 
     <button onclick="applyFilters()" class="bg-blue-500 text-white px-3 py-2 rounded">Apply</button>
 
-    <button onclick="toggleView('grid')" class="border px-3 py-2 rounded">Tiles</button>
-    <button onclick="toggleView('list')" class="border px-3 py-2 rounded">List</button>
+    <!-- View toggle radio -->
+    <div class="flex items-center gap-2 ml-4">
+      <label class="flex items-center gap-1">
+        <input type="radio" name="view" value="grid" checked onchange="toggleView('grid')"> Tiles
+      </label>
+      <label class="flex items-center gap-1">
+        <input type="radio" name="view" value="list" onchange="toggleView('list')"> List
+      </label>
+    </div>
+
   </div>
 
   <div id="status" class="mb-3 text-sm text-gray-600"></div>
@@ -50,7 +59,6 @@
 
     <div class="hidden lg:block sticky top-4">
       <div id="map" class="w-full h-[600px] rounded-xl shadow"></div>
-      <div id="mapMessage" class="absolute hidden">No coordinates available</div>
     </div>
 
   </div>
@@ -69,8 +77,7 @@ const DATA_URL = "https://raw.githubusercontent.com/samjraywood/property-result-
 function formatPrice(v){ return v ? "£"+Number(v).toLocaleString() : "?" }
 
 function setStatus(){
-  const el = document.getElementById("status");
-  el.textContent = `Showing ${filtered.length} of ${properties.length} properties`;
+  document.getElementById("status").textContent = `Showing ${filtered.length} of ${properties.length} properties`;
 }
 
 function initMap(){
@@ -79,8 +86,6 @@ function initMap(){
 }
 
 function updateMap(){
-  if(!map) return;
-
   markers.forEach(m=>map.removeLayer(m));
   markers=[];
 
@@ -89,10 +94,9 @@ function updateMap(){
   filtered.forEach(p=>{
     const lat = Number(p.latitude);
     const lng = Number(p.longitude);
-
     if(!lat || !lng) return;
 
-    const m = L.marker([lat,lng]).addTo(map);
+    const m=L.marker([lat,lng]).addTo(map);
     markers.push(m);
     bounds.push([lat,lng]);
   });
@@ -105,9 +109,7 @@ function updateMap(){
 function focusProperty(p){
   const lat = Number(p.latitude);
   const lng = Number(p.longitude);
-
-  if(!lat || !lng) return;
-  map.setView([lat,lng],15);
+  if(lat && lng) map.setView([lat,lng],15);
 }
 
 async function loadData(){
@@ -162,32 +164,30 @@ function render(){
         render();
         return;
       }
-
       selectedId=p.link;
       render();
       focusProperty(p);
     };
 
-    const thumb = (p.thumbnail && p.thumbnail.startsWith('http'))
-      ? p.thumbnail
-      : "https://via.placeholder.com/150";
+    const thumb = p.thumbnail ? p.thumbnail : "https://via.placeholder.com/300x200";
 
-    const content = `
-      <div>💰 ${formatPrice(p.price)}</div>
-      <div>📍 ${p.location||'-'}</div>
-      <div>🛏 ${p.beds||'-'} | 🛁 ${p.baths||'-'}</div>
-      <div>⭐ ${p.score||0}</div>
-      <div>🧠 ${(p.matches||[]).join(', ')}</div>
+    const details = `
+      <div><strong>Price:</strong> ${formatPrice(p.price)}</div>
+      <div><strong>Location:</strong> ${p.location||'-'}</div>
+      <div><strong>Beds:</strong> ${p.beds||'-'} | <strong>Baths:</strong> ${p.baths||'-'}</div>
+      <div><strong>Score:</strong> ${p.score||0}</div>
+      <div><strong>Matches:</strong> ${(p.matches||[]).join(', ')}</div>
+      <button onclick="window.open('${p.link}','_blank');event.stopPropagation();" class="mt-2 bg-blue-500 text-white px-3 py-1 rounded">View</button>
     `;
 
     d.innerHTML = viewMode === 'grid'
       ? `
-        <img src="${thumb}" class="w-full h-32 object-cover rounded mb-2" />
-        ${content}
+        <img src="${thumb}" class="w-full h-32 object-cover rounded mb-2" onerror="this.src='https://via.placeholder.com/300x200'" />
+        ${details}
       `
       : `
-        <img src="${thumb}" class="w-24 h-24 object-cover rounded" />
-        <div>${content}</div>
+        <img src="${thumb}" class="w-24 h-24 object-cover rounded" onerror="this.src='https://via.placeholder.com/150'" />
+        <div>${details}</div>
       `;
 
     c.appendChild(d);
@@ -195,6 +195,7 @@ function render(){
 }
 
 function applyFilters(){
+  const sort=document.getElementById("sortBy").value;
   const loc=document.getElementById("locationFilter").value;
   const minP=parseInt(minPrice.value)||0;
   const maxP=parseInt(maxPrice.value)||Infinity;
@@ -206,6 +207,14 @@ function applyFilters(){
     (p.beds||0)>=minB &&
     (!loc || p.source_location===loc)
   );
+
+  filtered.sort((a,b)=>{
+    if(sort==="price") return (a.price||0)-(b.price||0);
+    if(sort==="score") return (b.score||0)-(a.score||0);
+    if(sort==="first_seen") return new Date(b.first_seen)-new Date(a.first_seen);
+    if(sort==="beds") return (b.beds||0)-(a.beds||0);
+    return 0;
+  });
 
   selectedId=null;
 
