@@ -14,7 +14,6 @@
 <div class="max-w-7xl mx-auto">
   <h1 class="text-3xl font-bold mb-6">🏡 Property Dashboard</h1>
 
-  <!-- Filters -->
   <div class="bg-white p-4 rounded-2xl shadow mb-6 flex gap-2 flex-wrap">
     <select id="sortBy" onchange="applyFilters()" class="border p-2 rounded">
       <option value="score" selected>Score</option>
@@ -39,12 +38,10 @@
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-    <!-- LEFT -->
     <div class="lg:col-span-2">
       <div id="results" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
     </div>
 
-    <!-- RIGHT MAP -->
     <div>
       <div id="map" class="w-full h-[650px] rounded-2xl shadow"></div>
     </div>
@@ -61,11 +58,9 @@ let markers = [];
 const DATA_URL = "https://raw.githubusercontent.com/samjraywood/property-result-data/main/property-results.json";
 
 function formatPrice(v){ return v ? "£"+Number(v).toLocaleString() : "?" }
-function formatDate(d){ if(!d) return "?"; const x=new Date(d); return isNaN(x)?"?":x.toLocaleDateString() }
 
 function setStatus(){
-  const el=document.getElementById("status");
-  el.textContent = filtered.length===properties.length
+  document.getElementById("status").textContent = filtered.length===properties.length
     ? `Loaded ${properties.length} properties`
     : `Showing ${filtered.length} of ${properties.length}`;
 }
@@ -84,17 +79,15 @@ function updateMap(){
   const bounds=[];
 
   filtered.forEach(p=>{
-    if(!p.lat||!p.lng) return;
+    const lat = Number(p.latitude || p.lat);
+    const lng = Number(p.longitude || p.lng);
 
-    const lat=Number(p.lat);
-    const lng=Number(p.lng);
+    if(!lat || !lng) return;
 
-    if(!lat||!lng) return;
+    const marker = L.marker([lat,lng]).addTo(map)
+      .bindPopup(`<b>${formatPrice(p.price)}</b><br>${p.location || ''}`);
 
-    const m=L.marker([lat,lng]).addTo(map)
-      .bindPopup(`<b>${formatPrice(p.price)}</b><br>${p.location||''}`);
-
-    markers.push(m);
+    markers.push(marker);
     bounds.push([lat,lng]);
   });
 
@@ -104,9 +97,11 @@ function updateMap(){
 }
 
 function focusProperty(p){
-  if(!p.lat||!p.lng) return;
-  const lat=Number(p.lat);
-  const lng=Number(p.lng);
+  const lat = Number(p.latitude || p.lat);
+  const lng = Number(p.longitude || p.lng);
+
+  if(!lat || !lng) return;
+
   map.setView([lat,lng],15);
 }
 
@@ -126,6 +121,7 @@ async function loadData(){
 function populateLocations(){
   const s=document.getElementById("locationFilter");
   s.innerHTML='<option value="">All Locations</option>';
+
   [...new Set(properties.map(p=>p.source_location).filter(Boolean))]
     .forEach(l=>{
       const o=document.createElement("option");
@@ -143,13 +139,17 @@ function render(){
 
     d.onclick=()=>focusProperty(p);
 
-    const thumb=p.thumbnail||"https://via.placeholder.com/300x200";
+    const thumb = (p.thumbnail && p.thumbnail.startsWith('http'))
+      ? p.thumbnail
+      : "https://via.placeholder.com/300x200?text=No+Image";
+
+    const locationText = p.location || p.address || "-";
 
     d.innerHTML=`
-      <img src="${thumb}" class="w-full h-40 object-cover rounded mb-2" />
+      <img src="${thumb}" class="w-full h-40 object-cover rounded mb-2" onerror="this.src='https://via.placeholder.com/300x200'" />
       <div>💰 ${formatPrice(p.price)}</div>
       <div>📍 Source: ${p.source_location||'-'}</div>
-      <div>📍 Location: ${p.location||'-'}</div>
+      <div>📍 Location: ${locationText}</div>
       <div>🛏 Beds: ${p.beds||'-'}</div>
       <div>🛁 Baths: ${p.baths||'-'}</div>
       <div>⭐ Score: ${p.score||0}</div>
@@ -188,7 +188,10 @@ function applyFilters(){
 }
 
 function resetFilters(){
-  minPrice.value="";maxPrice.value="";minBeds.value="";locationFilter.value="";
+  minPrice.value="";
+  maxPrice.value="";
+  minBeds.value="";
+  locationFilter.value="";
   filtered=[...properties];
   applyFilters();
 }
