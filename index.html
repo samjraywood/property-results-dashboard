@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Property Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </head>
 <body class="bg-gray-100 p-6">
 
@@ -14,8 +18,8 @@
     <!-- Filters and Sorting -->
     <div class="bg-white p-4 rounded-2xl shadow mb-6 flex gap-2 flex-wrap">
       <select id="sortBy" onchange="applyFilters()" class="border p-2 rounded">
+        <option value="score" selected>Score</option>
         <option value="price">Price</option>
-        <option value="score">Score</option>
         <option value="first_seen">First Seen</option>
         <option value="beds">Bedrooms</option>
       </select>
@@ -31,41 +35,105 @@
       <button onclick="resetFilters()" class="bg-gray-300 px-4 py-2 rounded">Reset</button>
     </div>
 
-    <!-- Status / Errors -->
+    <!-- Status -->
     <div id="status" class="mb-4 text-sm text-gray-600"></div>
 
-    <!-- Results -->
-    <div id="results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    <!-- Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- LEFT: Properties -->
+      <div class="lg:col-span-2">
+        <div id="results" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+      </div>
+
+      <!-- RIGHT: Map -->
+      <div>
+        <div id="map" class="w-full h-[600px] rounded-2xl shadow"></div>
+      </div>
+
+    </div>
   </div>
 
 <script>
 let properties = [];
 let filtered = [];
+let map;
+let markers = [];
 
-// Replace with your public JSON URL
 const DATA_URL = "https://raw.githubusercontent.com/samjraywood/property-result-data/main/property-results.json";
 
 function setStatus(msg) {
-  const el = document.getElementById("status");
-  el.textContent = msg || "";
+  document.getElementById("status").textContent = msg || "";
 }
 
 function updateStatusCounts() {
   const total = properties.length;
   const shown = filtered.length;
-  if (total === shown) {
-    setStatus(`Loaded ${total} properties`);
-  } else {
-    setStatus(`Showing ${shown} of ${total} properties`);
+  setStatus(total === shown ? `Loaded ${total} properties` : `Showing ${shown} of ${total} properties`);
+}
+
+// Map init
+function initMap() {
+  map = L.map('map').setView([51.5, -0.1], 10);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+}
+
+// Plot all filtered markers
+function updateMapMarkers() {
+  if (!map) return;
+
+  // clear old markers
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+
+  const bounds = [];
+
+  filtered.forEach(p => {
+    if (!p.lat || !p.lng) return;
+
+    const lat = Number(p.lat);
+    const lng = Number(p.lng);
+
+    const marker = L.marker([lat, lng])
+      .addTo(map)
+      .bindPopup(`<b>${formatPrice(p.price)}</b><br>${p.location || ""}`);
+
+    markers.push(marker);
+    bounds.push([lat, lng]);
+  });
+
+  // Fit map to markers
+  if (bounds.length) {
+    map.fitBounds(bounds, { padding: [50, 50] });
   }
 }
 
-// Load data with error handling
+function focusOnProperty(p) {
+  if (!p.lat || !p.lng) return;
+
+  const lat = Number(p.lat);
+  const lng = Number(p.lng);
+
+  map.setView([lat, lng], 15);
+}
+
+// Format helpers
+function formatPrice(value) {
+  if (!value) return "?";
+  return "£" + Number(value).toLocaleString();
+}
+
+function formatDate(dateString) {
+  if (!dateString) return "?";
+  const d = new Date(dateString);
+  return isNaN(d) ? "?" : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+// Load data
 async function loadData() {
   try {
     setStatus("Loading data…");
     const res = await fetch(DATA_URL, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
     properties = Object.values(data || {});
@@ -73,20 +141,16 @@ async function loadData() {
 
     populateLocationFilter();
     applyFilters();
-    setStatus(`Loaded ${properties.length} properties`);
   } catch(e) {
-    console.error("Failed to load JSON:", e);
-    setStatus("Failed to load data. Check console and DATA_URL.");
+    console.error(e);
+    setStatus("Failed to load data");
   }
 }
 
-// Populate source_location dropdown
 function populateLocationFilter() {
   const select = document.getElementById("locationFilter");
-  // reset options except first
   select.innerHTML = '<option value="">All Locations</option>';
   const locations = [...new Set(properties.map(p => p.source_location).filter(Boolean))];
-  locations.sort();
   locations.forEach(loc => {
     const opt = document.createElement("option");
     opt.value = loc;
@@ -95,86 +159,64 @@ function populateLocationFilter() {
   });
 }
 
-// Format price with commas and £
-function formatPrice(value) {
-  if (value === null || value === undefined || value === "") return "?";
-  const num = Number(value);
-  if (!Number.isFinite(num)) return "?";
-  return "£" + num.toLocaleString();
-}
-
-// Format first seen date safely
-function formatDate(dateString) {
-  if (!dateString) return "?";
-  const d = new Date(dateString);
-  if (isNaN(d)) return "?";
-  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-// Render property cards
+// Render cards
 function render() {
   const container = document.getElementById("results");
   container.innerHTML = "";
 
   if (!filtered.length) {
-    container.innerHTML = '<div class="col-span-full text-gray-500">No results</div>';
+    container.innerHTML = '<div class="text-gray-500">No results</div>';
     return;
   }
 
   filtered.forEach(p => {
     const card = document.createElement("div");
-    card.className = "bg-white p-4 rounded-2xl shadow hover:shadow-lg transition cursor-pointer";
-    card.onclick = () => { if (p.link) window.open(p.link, "_blank"); };
+    card.className = "bg-white p-4 rounded-2xl shadow hover:shadow-lg cursor-pointer";
 
-    // Safe thumbnail fallback
-    const thumbUrl = (p.thumbnail && typeof p.thumbnail === 'string' && p.thumbnail.startsWith('http'))
-      ? p.thumbnail
-      : "https://via.placeholder.com/300x200?text=Property+Image";
+    card.onclick = () => focusOnProperty(p);
+
+    const thumb = p.thumbnail || "https://via.placeholder.com/300x200?text=No+Image";
 
     card.innerHTML = `
-      <img src="${thumbUrl}" alt="Property" class="w-full h-40 object-cover rounded-lg mb-2" onerror="this.src='https://via.placeholder.com/300x200?text=Property+Image'">
-      <div class="text-xl font-semibold mb-1">${formatPrice(p.price)}</div>
-      <div class="text-gray-600 mb-1">${p.location || "?"}</div>
-      <div class="text-sm mb-1">🛏 ${p.beds ?? "?"} | 🛁 ${p.baths ?? "?"}</div>
-      <div class="text-sm mb-1">🌿 ${p.garden || "-"} | 🌾 ${p.land || "-"}</div>
-      <div class="text-sm mb-1">⭐ Score: ${p.score ?? 0}</div>
-      <div class="text-sm mb-1">First Seen: ${formatDate(p.first_seen)}</div>
-      <div class="text-sm mb-1">Source: ${p.source_location || "-"}</div>
+      <img src="${thumb}" class="w-full h-40 object-cover rounded mb-2" />
+      <div class="font-semibold text-lg">${formatPrice(p.price)}</div>
+      <div class="text-gray-600">${p.location || ""}</div>
+      <div class="text-sm">🛏 ${p.beds || "?"} | 🛁 ${p.baths || "?"}</div>
+      <div class="text-sm">⭐ ${p.score || 0}</div>
+      <div class="text-sm">First Seen: ${formatDate(p.first_seen)}</div>
     `;
 
     container.appendChild(card);
   });
 }
 
-// Apply sorting & filtering
+// Filters + sorting
 function applyFilters() {
   const sortBy = document.getElementById("sortBy").value;
-  const locationFilter = document.getElementById("locationFilter").value;
+  const loc = document.getElementById("locationFilter").value;
   const minPrice = parseInt(document.getElementById("minPrice").value) || 0;
   const maxPrice = parseInt(document.getElementById("maxPrice").value) || Infinity;
   const minBeds = parseInt(document.getElementById("minBeds").value) || 0;
 
-  filtered = properties
-    .filter(p =>
-      (Number(p.price) || 0) >= minPrice &&
-      (Number(p.price) || 0) <= maxPrice &&
-      (Number(p.beds) || 0) >= minBeds &&
-      (!locationFilter || p.source_location === locationFilter)
-    );
+  filtered = properties.filter(p =>
+    (p.price || 0) >= minPrice &&
+    (p.price || 0) <= maxPrice &&
+    (p.beds || 0) >= minBeds &&
+    (!loc || p.source_location === loc)
+  );
 
   filtered.sort((a, b) => {
-    if (sortBy === "price") return (Number(a.price) || 0) - (Number(b.price) || 0);
-    if (sortBy === "score") return (Number(b.score) || 0) - (Number(a.score) || 0);
-    if (sortBy === "first_seen") return new Date(b.first_seen || 0) - new Date(a.first_seen || 0);
-    if (sortBy === "beds") return (Number(b.beds) || 0) - (Number(a.beds) || 0);
-    return 0;
+    if (sortBy === "price") return (a.price||0)-(b.price||0);
+    if (sortBy === "score") return (b.score||0)-(a.score||0);
+    if (sortBy === "first_seen") return new Date(b.first_seen)-new Date(a.first_seen);
+    if (sortBy === "beds") return (b.beds||0)-(a.beds||0);
   });
 
   render();
+  updateMapMarkers();
   updateStatusCounts();
 }
 
-// Reset filters
 function resetFilters() {
   document.getElementById("minPrice").value = "";
   document.getElementById("maxPrice").value = "";
@@ -184,6 +226,7 @@ function resetFilters() {
   applyFilters();
 }
 
+initMap();
 loadData();
 </script>
 
