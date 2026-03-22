@@ -22,12 +22,11 @@
 
       <select id="locationFilter" onchange="applyFilters()" class="border p-2 rounded">
         <option value="">All Locations</option>
-        <!-- dynamically populated -->
       </select>
 
-      <input id="minPrice" type="number" placeholder="Min Price" class="border p-2 rounded"/>
-      <input id="maxPrice" type="number" placeholder="Max Price" class="border p-2 rounded"/>
-      <input id="minBeds" type="number" placeholder="Min Beds" class="border p-2 rounded"/>
+      <input id="minPrice" type="number" placeholder="Min Price" class="border p-2 rounded" />
+      <input id="maxPrice" type="number" placeholder="Max Price" class="border p-2 rounded" />
+      <input id="minBeds" type="number" placeholder="Min Beds" class="border p-2 rounded" />
       <button onclick="applyFilters()" class="bg-blue-500 text-white px-4 py-2 rounded">Apply</button>
       <button onclick="resetFilters()" class="bg-gray-300 px-4 py-2 rounded">Reset</button>
     </div>
@@ -67,6 +66,19 @@ function populateLocationFilter() {
   });
 }
 
+// Format price with commas and £
+function formatPrice(value) {
+  if (!value) return "?";
+  return "£" + value.toLocaleString();
+}
+
+// Format first seen date
+function formatDate(dateString) {
+  if (!dateString) return "?";
+  const d = new Date(dateString);
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 // Render property cards
 function render() {
   const container = document.getElementById("results");
@@ -75,16 +87,22 @@ function render() {
   filtered.forEach(p => {
     const card = document.createElement("div");
     card.className = "bg-white p-4 rounded-2xl shadow hover:shadow-lg transition cursor-pointer";
-    card.onclick = () => window.open(p.link, "_blank"); // click navigates to property
+    card.onclick = () => window.open(p.link, "_blank");
+
+    // Use thumbnail if available; otherwise placeholder
+    const thumbUrl = p.thumbnail || "https://via.placeholder.com/300x200?text=Property+Image";
 
     card.innerHTML = `
-      <div class="text-xl font-semibold mb-2">${p.price_display || "?"}</div>
-      <div class="text-gray-600 mb-2">${p.location || "?"}</div>
-      <div class="text-sm mb-2">🛏 ${p.beds || "?"} | 🛁 ${p.baths || "?"}</div>
-      <div class="text-sm mb-2">🌿 ${p.garden || "-"} | 🌾 ${p.land || "-"}</div>
-      <div class="text-sm mb-2">⭐ Score: ${p.score || 0}</div>
-      <div class="text-sm mb-2">Source: ${p.source_location || "-"}</div>
+      <img src="${thumbUrl}" alt="Property" class="w-full h-40 object-cover rounded-lg mb-2">
+      <div class="text-xl font-semibold mb-1">${formatPrice(p.price)}</div>
+      <div class="text-gray-600 mb-1">${p.location || "?"}</div>
+      <div class="text-sm mb-1">🛏 ${p.beds || "?"} | 🛁 ${p.baths || "?"}</div>
+      <div class="text-sm mb-1">🌿 ${p.garden || "-"} | 🌾 ${p.land || "-"}</div>
+      <div class="text-sm mb-1">⭐ Score: ${p.score || 0}</div>
+      <div class="text-sm mb-1">First Seen: ${formatDate(p.first_seen)}</div>
+      <div class="text-sm mb-1">Source: ${p.source_location || "-"}</div>
     `;
+
     container.appendChild(card);
   });
 }
@@ -122,11 +140,4 @@ function resetFilters() {
   document.getElementById("minBeds").value = "";
   document.getElementById("locationFilter").value = "";
   filtered = [...properties];
-  render();
-}
-
-loadData();
-</script>
-
-</body>
-</html>
+  render
