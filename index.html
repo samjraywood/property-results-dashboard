@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Property Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
-
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
@@ -16,10 +15,10 @@
 <body class="bg-gray-100 p-4">
 
 <div class="max-w-7xl mx-auto">
-  <h1 class="text-2xl md:text-3xl font-bold mb-4">🏡 Property Dashboard</h1>
+  <h1 class="text-2xl font-bold mb-4">🏡 Property Dashboard</h1>
 
   <!-- Controls -->
-  <div class="bg-white p-3 rounded-xl shadow mb-4 flex flex-wrap gap-2 items-center">
+  <div class="bg-white p-3 rounded-xl shadow mb-4 flex flex-wrap gap-2">
     <select id="sortBy" onchange="applyFilters()" class="border p-2 rounded">
       <option value="score">Score</option>
       <option value="price">Price</option>
@@ -33,50 +32,34 @@
 
     <input id="minPrice" type="number" placeholder="Min £" class="border p-2 rounded w-24" />
     <input id="maxPrice" type="number" placeholder="Max £" class="border p-2 rounded w-24" />
+    <input id="minBeds" type="number" placeholder="Beds" class="border p-2 rounded w-20" />
 
     <button onclick="applyFilters()" class="bg-blue-500 text-white px-3 py-2 rounded">Apply</button>
 
-    <!-- View toggle -->
-    <button onclick="toggleView('grid')" class="px-3 py-2 border rounded">Tiles</button>
-    <button onclick="toggleView('list')" class="px-3 py-2 border rounded">List</button>
+    <button onclick="toggleView('grid')" class="border px-3 py-2 rounded">Tiles</button>
+    <button onclick="toggleView('list')" class="border px-3 py-2 rounded">List</button>
   </div>
 
   <div id="status" class="mb-3 text-sm text-gray-600"></div>
 
-  <!-- Layout -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-    <!-- Results -->
     <div class="lg:col-span-2">
-      <div id="results" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      <div id="results"></div>
     </div>
 
-    <!-- Map -->
-    <div class="sticky top-4 lg:block hidden">
-      <div id="map" class="w-full h-[600px] rounded-xl shadow relative"></div>
-      <div id="mapMessage" class="absolute inset-0 flex items-center justify-center text-gray-600 bg-white/80 hidden">
-        No location data available for this property
-      </div>
+    <div class="hidden lg:block sticky top-4">
+      <div id="map" class="w-full h-[600px] rounded-xl shadow"></div>
+      <div id="mapMessage" class="absolute hidden">No coordinates available</div>
     </div>
 
   </div>
-
-  <!-- Mobile Map Toggle -->
-  <div class="lg:hidden fixed bottom-4 right-4">
-    <button onclick="toggleMobileMap()" class="bg-blue-500 text-white px-4 py-2 rounded-full shadow">Map</button>
-  </div>
-
-  <div id="mobileMap" class="hidden fixed inset-0 bg-white z-50">
-    <div id="mapMobile" class="w-full h-full"></div>
-    <button onclick="toggleMobileMap()" class="absolute top-4 right-4 bg-black text-white px-3 py-1 rounded">Close</button>
-  </div>
-
 </div>
 
 <script>
 let properties = [];
 let filtered = [];
-let map, mapMobile;
+let map;
 let markers = [];
 let selectedId = null;
 let viewMode = 'grid';
@@ -86,23 +69,19 @@ const DATA_URL = "https://raw.githubusercontent.com/samjraywood/property-result-
 function formatPrice(v){ return v ? "£"+Number(v).toLocaleString() : "?" }
 
 function setStatus(){
-  document.getElementById("status").textContent = `Showing ${filtered.length} properties`;
+  const el = document.getElementById("status");
+  el.textContent = `Showing ${filtered.length} of ${properties.length} properties`;
 }
 
 function initMap(){
   map=L.map('map').setView([51.5,-0.1],10);
-  mapMobile=L.map('mapMobile').setView([51.5,-0.1],10);
-
-  const layer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19});
-  layer.addTo(map);
-  layer.addTo(mapMobile);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
 }
 
 function updateMap(){
-  markers.forEach(m=>{
-    map.removeLayer(m);
-    mapMobile.removeLayer(m);
-  });
+  if(!map) return;
+
+  markers.forEach(m=>map.removeLayer(m));
   markers=[];
 
   const bounds=[];
@@ -113,14 +92,13 @@ function updateMap(){
 
     if(!lat || !lng) return;
 
-    const m=L.marker([lat,lng]).addTo(map).addTo(mapMobile);
+    const m = L.marker([lat,lng]).addTo(map);
     markers.push(m);
     bounds.push([lat,lng]);
   });
 
   if(bounds.length && !selectedId){
-    map.fitBounds(bounds);
-    mapMobile.fitBounds(bounds);
+    map.fitBounds(bounds,{padding:[40,40]});
   }
 }
 
@@ -128,30 +106,16 @@ function focusProperty(p){
   const lat = Number(p.latitude);
   const lng = Number(p.longitude);
 
-  if(!lat || !lng){
-    document.getElementById("mapMessage").classList.remove("hidden");
-    return;
-  }
-
-  document.getElementById("mapMessage").classList.add("hidden");
+  if(!lat || !lng) return;
   map.setView([lat,lng],15);
-  mapMobile.setView([lat,lng],15);
-}
-
-function toggleMobileMap(){
-  const el=document.getElementById("mobileMap");
-  el.classList.toggle("hidden");
-  setTimeout(()=>{
-    mapMobile.invalidateSize();
-  },200);
 }
 
 async function loadData(){
-  const res=await fetch(DATA_URL);
-  const data=await res.json();
+  const res = await fetch(DATA_URL);
+  const data = await res.json();
 
-  properties=Object.values(data||{});
-  filtered=[...properties];
+  properties = Object.values(data || {});
+  filtered = [...properties];
 
   populateLocations();
   applyFilters();
@@ -159,6 +123,8 @@ async function loadData(){
 
 function populateLocations(){
   const s=document.getElementById("locationFilter");
+  s.innerHTML='<option value="">All Locations</option>';
+
   [...new Set(properties.map(p=>p.source_location).filter(Boolean))]
     .forEach(l=>{
       const o=document.createElement("option");
@@ -202,20 +168,26 @@ function render(){
       focusProperty(p);
     };
 
-    const thumb = p.thumbnail || "https://via.placeholder.com/150";
+    const thumb = (p.thumbnail && p.thumbnail.startsWith('http'))
+      ? p.thumbnail
+      : "https://via.placeholder.com/150";
+
+    const content = `
+      <div>💰 ${formatPrice(p.price)}</div>
+      <div>📍 ${p.location||'-'}</div>
+      <div>🛏 ${p.beds||'-'} | 🛁 ${p.baths||'-'}</div>
+      <div>⭐ ${p.score||0}</div>
+      <div>🧠 ${(p.matches||[]).join(', ')}</div>
+    `;
 
     d.innerHTML = viewMode === 'grid'
       ? `
         <img src="${thumb}" class="w-full h-32 object-cover rounded mb-2" />
-        <div>${formatPrice(p.price)}</div>
-        <div>${p.location||'-'}</div>
+        ${content}
       `
       : `
         <img src="${thumb}" class="w-24 h-24 object-cover rounded" />
-        <div>
-          <div>${formatPrice(p.price)}</div>
-          <div>${p.location||'-'}</div>
-        </div>
+        <div>${content}</div>
       `;
 
     c.appendChild(d);
@@ -223,8 +195,20 @@ function render(){
 }
 
 function applyFilters(){
-  filtered=[...properties];
+  const loc=document.getElementById("locationFilter").value;
+  const minP=parseInt(minPrice.value)||0;
+  const maxP=parseInt(maxPrice.value)||Infinity;
+  const minB=parseInt(minBeds.value)||0;
+
+  filtered = properties.filter(p=>
+    (p.price||0)>=minP &&
+    (p.price||0)<=maxP &&
+    (p.beds||0)>=minB &&
+    (!loc || p.source_location===loc)
+  );
+
   selectedId=null;
+
   render();
   updateMap();
   setStatus();
