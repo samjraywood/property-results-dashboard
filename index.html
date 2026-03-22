@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Property Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+
+  <div class="max-w-6xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">🏡 Property Dashboard</h1>
+
+    <!-- Filters -->
+    <div class="bg-white p-4 rounded-2xl shadow mb-6 flex gap-4 flex-wrap">
+      <input id="minPrice" type="number" placeholder="Min Price" class="border p-2 rounded" />
+      <input id="maxPrice" type="number" placeholder="Max Price" class="border p-2 rounded" />
+      <input id="minBeds" type="number" placeholder="Min Beds" class="border p-2 rounded" />
+      <button onclick="applyFilters()" class="bg-blue-500 text-white px-4 py-2 rounded">Apply</button>
+      <button onclick="resetFilters()" class="bg-gray-300 px-4 py-2 rounded">Reset</button>
+    </div>
+
+    <!-- Results -->
+    <div id="results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </div>
+
+<script>
+let properties = [];
+let filtered = [];
+
+// 🔗 Replace with your public repo RAW URL
+const DATA_URL = "https://raw.githubusercontent.com/samjraywood/property-result-data/main/property-results.json";
+
+async function loadData() {
+  const res = await fetch(DATA_URL);
+  const data = await res.json();
+
+  // Convert from object map to array
+  properties = Object.values(data);
+  filtered = properties;
+  render();
+}
+
+function render() {
+  const container = document.getElementById("results");
+  container.innerHTML = "";
+
+  filtered.forEach(p => {
+    const card = document.createElement("div");
+    card.className = "bg-white p-4 rounded-2xl shadow hover:shadow-lg transition";
+
+    card.innerHTML = `
+      <div class="text-xl font-semibold mb-2">${p.price_display || "?"}</div>
+      <div class="text-gray-600 mb-2">${p.location || "?"}</div>
+      <div class="text-sm mb-2">🛏 ${p.beds || "?"} | 🛁 ${p.baths || "?"}</div>
+      <div class="text-sm mb-2">🌿 ${p.garden || "-"} | 🌾 ${p.land || "-"}</div>
+      <div class="text-sm mb-2">⭐ Score: ${p.score || 0}</div>
+      <a href="${p.link}" target="_blank" class="text-blue-500 underline">View Property</a>
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+function applyFilters() {
+  const minPrice = parseInt(document.getElementById("minPrice").value) || 0;
+  const maxPrice = parseInt(document.getElementById("maxPrice").value) || Infinity;
+  const minBeds = parseInt(document.getElementById("minBeds").value) || 0;
+
+  filtered = properties.filter(p => {
+    return (p.price || 0) >= minPrice &&
+           (p.price || 0) <= maxPrice &&
+           (p.beds || 0) >= minBeds;
+  });
+
+  render();
+}
+
+function resetFilters() {
+  filtered = properties;
+  document.getElementById("minPrice").value = "";
+  document.getElementById("maxPrice").value = "";
+  document.getElementById("minBeds").value = "";
+  render();
+}
+
+loadData();
+</script>
+
+</body>
+</html>
