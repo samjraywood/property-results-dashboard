@@ -20,20 +20,20 @@
   <!-- Controls -->
   <div class="bg-white p-3 rounded-xl shadow mb-4 flex flex-wrap gap-2 items-center">
 
+    <!-- SORTING -->
     <select id="sortBy" onchange="applyFilters()" class="border p-2 rounded">
-      <option value="score" selected>Score</option>
-      <option value="price">Price</option>
-      <option value="first_seen">First Seen</option>
-      <option value="beds">Bedrooms</option>
+      <option value="score_desc" selected>Score (desc)</option>
+      <option value="score_asc">Score (asc)</option>
+      <option value="price_desc">Price (desc)</option>
+      <option value="price_asc">Price (asc)</option>
+      <option value="first_seen_desc">First Seen (desc)</option>
+      <option value="first_seen_asc">First Seen (asc)</option>
     </select>
 
+    <!-- SOURCE FILTER ONLY -->
     <select id="locationFilter" onchange="applyFilters()" class="border p-2 rounded">
-      <option value="">All Locations</option>
+      <option value="">All Sources</option>
     </select>
-
-    <input id="minPrice" type="number" placeholder="Min £" class="border p-2 rounded w-24" />
-    <input id="maxPrice" type="number" placeholder="Max £" class="border p-2 rounded w-24" />
-    <input id="minBeds" type="number" placeholder="Beds" class="border p-2 rounded w-20" />
 
     <button onclick="applyFilters()" class="bg-blue-500 text-white px-3 py-2 rounded">Apply</button>
 
@@ -125,7 +125,7 @@ async function loadData(){
 
 function populateLocations(){
   const s=document.getElementById("locationFilter");
-  s.innerHTML='<option value="">All Locations</option>';
+  s.innerHTML='<option value="">All Sources</option>';
 
   [...new Set(properties.map(p=>p.source_location).filter(Boolean))]
     .forEach(l=>{
@@ -172,11 +172,12 @@ function render(){
     const thumb = p.thumbnail ? p.thumbnail : "https://via.placeholder.com/300x200";
 
     const details = `
-      <div><strong>Price:</strong> ${formatPrice(p.price)}</div>
-      <div><strong>Location:</strong> ${p.location||'-'}</div>
-      <div><strong>Beds:</strong> ${p.beds||'-'} | <strong>Baths:</strong> ${p.baths||'-'}</div>
-      <div><strong>Score:</strong> ${p.score||0}</div>
-      <div><strong>Matches:</strong> ${(p.matches||[]).join(', ')}</div>
+      <div>💰 <strong>Price:</strong> ${formatPrice(p.price)}</div>
+      <div>📍 <strong>Location:</strong> ${p.location||'-'}</div>
+      <div>🛏 <strong>Beds:</strong> ${p.beds||'-'} &nbsp; 🛁 <strong>Baths:</strong> ${p.baths||'-'}</div>
+      <div>⭐ <strong>Score:</strong> ${p.score||0}</div>
+      <div>🧠 <strong>Matches:</strong> ${(p.matches||[]).join(', ')}</div>
+      <div>📡 <strong>Source:</strong> ${p.source_location||'-'}</div>
       <button onclick="window.open('${p.link}','_blank');event.stopPropagation();" class="mt-2 bg-blue-500 text-white px-3 py-1 rounded">View</button>
     `;
 
@@ -197,23 +198,21 @@ function render(){
 function applyFilters(){
   const sort=document.getElementById("sortBy").value;
   const loc=document.getElementById("locationFilter").value;
-  const minP=parseInt(minPrice.value)||0;
-  const maxP=parseInt(maxPrice.value)||Infinity;
-  const minB=parseInt(minBeds.value)||0;
 
   filtered = properties.filter(p=>
-    (p.price||0)>=minP &&
-    (p.price||0)<=maxP &&
-    (p.beds||0)>=minB &&
     (!loc || p.source_location===loc)
   );
 
   filtered.sort((a,b)=>{
-    if(sort==="price") return (a.price||0)-(b.price||0);
-    if(sort==="score") return (b.score||0)-(a.score||0);
-    if(sort==="first_seen") return new Date(b.first_seen)-new Date(a.first_seen);
-    if(sort==="beds") return (b.beds||0)-(a.beds||0);
-    return 0;
+    switch(sort){
+      case 'score_desc': return (b.score||0)-(a.score||0);
+      case 'score_asc': return (a.score||0)-(b.score||0);
+      case 'price_desc': return (b.price||0)-(a.price||0);
+      case 'price_asc': return (a.price||0)-(b.price||0);
+      case 'first_seen_desc': return new Date(b.first_seen)-new Date(a.first_seen);
+      case 'first_seen_asc': return new Date(a.first_seen)-new Date(b.first_seen);
+      default: return 0;
+    }
   });
 
   selectedId=null;
