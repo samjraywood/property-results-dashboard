@@ -8,6 +8,10 @@
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <style>
+    .selected-tile { outline: 3px solid #3b82f6; }
+  </style>
 </head>
 <body class="bg-gray-100 p-6">
 
@@ -42,8 +46,11 @@
       <div id="results" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
     </div>
 
-    <div>
-      <div id="map" class="w-full h-[650px] rounded-2xl shadow"></div>
+    <div class="sticky top-6">
+      <div id="map" class="w-full h-[650px] rounded-2xl shadow relative"></div>
+      <div id="mapMessage" class="absolute inset-0 flex items-center justify-center text-gray-600 bg-white/80 hidden">
+        <div>No location data available for this property</div>
+      </div>
     </div>
 
   </div>
@@ -54,6 +61,7 @@ let properties = [];
 let filtered = [];
 let map;
 let markers = [];
+let selectedId = null;
 
 const DATA_URL = "https://raw.githubusercontent.com/samjraywood/property-result-data/main/property-results.json";
 
@@ -91,7 +99,7 @@ function updateMap(){
     bounds.push([lat,lng]);
   });
 
-  if(bounds.length){
+  if(bounds.length && !selectedId){
     map.fitBounds(bounds,{padding:[40,40]});
   }
 }
@@ -100,22 +108,26 @@ function focusProperty(p){
   const lat = Number(p.latitude || p.lat);
   const lng = Number(p.longitude || p.lng);
 
-  if(!lat || !lng) return;
+  const msg = document.getElementById("mapMessage");
 
+  if(!lat || !lng){
+    msg.classList.remove("hidden");
+    return;
+  }
+
+  msg.classList.add("hidden");
   map.setView([lat,lng],15);
 }
 
 async function loadData(){
-  try{
-    const res=await fetch(DATA_URL);
-    const data=await res.json();
+  const res=await fetch(DATA_URL);
+  const data=await res.json();
 
-    properties=Object.values(data||{});
-    filtered=[...properties];
+  properties=Object.values(data||{});
+  filtered=[...properties];
 
-    populateLocations();
-    applyFilters();
-  }catch(e){console.error(e)}
+  populateLocations();
+  applyFilters();
 }
 
 function populateLocations(){
@@ -133,23 +145,39 @@ function render(){
   const c=document.getElementById("results");
   c.innerHTML="";
 
-  filtered.forEach(p=>{
+  filtered.forEach((p,i)=>{
+    const id = p.link;
+
     const d=document.createElement("div");
     d.className="bg-white p-4 rounded-2xl shadow cursor-pointer";
 
-    d.onclick=()=>focusProperty(p);
+    if(selectedId === id){
+      d.classList.add("selected-tile");
+    }
+
+    d.onclick=()=>{
+      if(selectedId === id){
+        selectedId = null;
+        document.getElementById("mapMessage").classList.add("hidden");
+        updateMap();
+        render();
+        return;
+      }
+
+      selectedId = id;
+      render();
+      focusProperty(p);
+    };
 
     const thumb = (p.thumbnail && p.thumbnail.startsWith('http'))
       ? p.thumbnail
       : "https://via.placeholder.com/300x200?text=No+Image";
 
-    const locationText = p.location || "-";
-
     d.innerHTML=`
       <img src="${thumb}" class="w-full h-40 object-cover rounded mb-2" onerror="this.src='https://via.placeholder.com/300x200'" />
       <div>💰 ${formatPrice(p.price)}</div>
       <div>📍 Source: ${p.source_location||'-'}</div>
-      <div>📍 Location: ${locationText}</div>
+      <div>📍 Location: ${p.location||'-'}</div>
       <div>🛏 Beds: ${p.beds||'-'}</div>
       <div>🛁 Baths: ${p.baths||'-'}</div>
       <div>⭐ Score: ${p.score||0}</div>
@@ -181,6 +209,9 @@ function applyFilters(){
     if(sort==="first_seen") return new Date(b.first_seen)-new Date(a.first_seen);
     if(sort==="beds") return (b.beds||0)-(a.beds||0);
   });
+
+  selectedId = null;
+  document.getElementById("mapMessage").classList.add("hidden");
 
   render();
   updateMap();
