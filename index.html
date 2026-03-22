@@ -35,7 +35,7 @@
       <option value="">All Sources</option>
     </select>
 
-    <button onclick="applyFilters()" class="bg-blue-500 text-white px-3 py-2 rounded">Apply</button>
+    
 
     <!-- View toggle radio -->
     <div class="flex items-center gap-2 ml-4">
@@ -57,12 +57,9 @@
       <div id="results"></div>
     </div>
 
-    <div class="hidden lg:block">
-      <div class="sticky top-4">
-    <div id="map" class="w-full h-[600px] rounded-xl shadow"></div>
-        
-  </div>
-</div>
+    <div class="hidden lg:block sticky top-4">
+      <div id="map" class="w-full h-[600px] rounded-xl shadow"></div>
+    </div>
 
   </div>
 </div>
@@ -156,7 +153,7 @@ function render(){
 
     d.className = viewMode === 'grid'
       ? "bg-white p-3 rounded-xl shadow cursor-pointer"
-      : "bg-white p-3 rounded-xl shadow cursor-pointer flex gap-3";
+      : "bg-white p-3 rounded-xl shadow cursor-pointer grid grid-cols-4 gap-4 items-center";
 
     if(selectedId===p.link) d.classList.add("selected-tile");
 
@@ -175,23 +172,40 @@ function render(){
     const thumb = p.thumbnail ? p.thumbnail : "https://via.placeholder.com/300x200";
 
     const details = `
-      <div>💰 <strong>Price:</strong> ${formatPrice(p.price)}</div>
-      <div>📍 <strong>Location:</strong> ${p.location||'-'}</div>
-      <div>🛏 <strong>Beds:</strong> ${p.beds||'-'} &nbsp; 🛁 <strong>Baths:</strong> ${p.baths||'-'}</div>
-      <div>⭐ <strong>Score:</strong> ${p.score||0}</div>
-      <div>🧠 <strong>Matches:</strong> ${(p.matches||[]).join(', ')}</div>
-      <div>📡 <strong>Source:</strong> ${p.source_location||'-'}</div>
-      <button onclick="window.open('${p.link}','_blank');event.stopPropagation();" class="mt-2 bg-blue-500 text-white px-3 py-1 rounded">View</button>
+      <div class="grid grid-cols-2 gap-x-4 text-sm">
+        <div>💰 <strong>Price:</strong> ${formatPrice(p.price)}</div>
+        <div>⭐ <strong>Score:</strong> ${p.score||0}</div>
+        <div>📍 <strong>Location:</strong> ${p.location||'-'}</div>
+        <div>📡 <strong>Source:</strong> ${p.source_location||'-'}</div>
+        <div>🛏 <strong>Beds:</strong> ${p.beds||'-'}</div>
+        <div>🛁 <strong>Baths:</strong> ${p.baths||'-'}</div>
+        <div class="col-span-2">🧠 <strong>Matches:</strong> ${(p.matches||[]).join(', ')}</div>
+      </div>
     `;
 
     d.innerHTML = viewMode === 'grid'
       ? `
         <img src="${thumb}" class="w-full h-32 object-cover rounded mb-2" onerror="this.src='https://via.placeholder.com/300x200'" />
         ${details}
+        <div class="mt-2">
+          <button onclick="window.open('${p.link}','_blank');event.stopPropagation();" class="bg-blue-500 text-white px-3 py-1 rounded w-full">View</button>
+        </div>
       `
       : `
-        <img src="${thumb}" class="w-24 h-24 object-cover rounded" onerror="this.src='https://via.placeholder.com/150'" />
-        <div>${details}</div>
+        <img src="${thumb}" class="w-full h-20 object-cover rounded" onerror="this.src='https://via.placeholder.com/150'" />
+        <div class="col-span-2">${details}</div>
+        <div class="flex justify-end items-center">
+          <button onclick="window.open('${p.link}','_blank');event.stopPropagation();" class="bg-blue-500 text-white px-3 py-1 rounded">View</button>
+        </div>
+      `;event.stopPropagation();" class="bg-blue-500 text-white px-3 py-1 rounded w-full">View</button>
+        </div>
+      `
+      : `
+        <img src="${thumb}" class="w-full h-20 object-cover rounded" onerror="this.src='https://via.placeholder.com/150'" />
+        <div class="col-span-2">${details}</div>
+        <div class="flex justify-end">
+          <button onclick="window.open('${p.link}','_blank');event.stopPropagation();" class="bg-blue-500 text-white px-3 py-1 rounded">View</button>
+        </div>
       `;
 
     c.appendChild(d);
