@@ -15,7 +15,7 @@
     <div class="bg-white p-4 rounded-2xl shadow mb-6 flex gap-2 flex-wrap">
       <select id="sortBy" onchange="applyFilters()" class="border p-2 rounded">
         <option value="price">Price</option>
-        <option value="score" selected>Score</option>
+        <option value="score">Score</option>
         <option value="first_seen">First Seen</option>
         <option value="beds">Bedrooms</option>
       </select>
@@ -48,6 +48,16 @@ const DATA_URL = "https://raw.githubusercontent.com/samjraywood/property-result-
 function setStatus(msg) {
   const el = document.getElementById("status");
   el.textContent = msg || "";
+}
+
+function updateStatusCounts() {
+  const total = properties.length;
+  const shown = filtered.length;
+  if (total === shown) {
+    setStatus(`Loaded ${total} properties`);
+  } else {
+    setStatus(`Showing ${shown} of ${total} properties`);
+  }
 }
 
 // Load data with error handling
@@ -161,6 +171,7 @@ function applyFilters() {
   });
 
   render();
+  updateStatusCounts();
 }
 
 // Reset filters
