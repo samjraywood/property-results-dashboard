@@ -8,14 +8,26 @@
 </head>
 <body class="bg-gray-100 p-6">
 
-  <div class="max-w-6xl mx-auto">
+  <div class="max-w-7xl mx-auto">
     <h1 class="text-3xl font-bold mb-6">🏡 Property Dashboard</h1>
 
-    <!-- Filters -->
-    <div class="bg-white p-4 rounded-2xl shadow mb-6 flex gap-4 flex-wrap">
-      <input id="minPrice" type="number" placeholder="Min Price" class="border p-2 rounded" />
-      <input id="maxPrice" type="number" placeholder="Max Price" class="border p-2 rounded" />
-      <input id="minBeds" type="number" placeholder="Min Beds" class="border p-2 rounded" />
+    <!-- Filters and Sorting -->
+    <div class="bg-white p-4 rounded-2xl shadow mb-6 flex gap-2 flex-wrap">
+      <select id="sortBy" onchange="applyFilters()" class="border p-2 rounded">
+        <option value="price">Price</option>
+        <option value="score">Score</option>
+        <option value="first_seen">First Seen</option>
+        <option value="beds">Bedrooms</option>
+      </select>
+
+      <select id="locationFilter" onchange="applyFilters()" class="border p-2 rounded">
+        <option value="">All Locations</option>
+        <!-- dynamically populated -->
+      </select>
+
+      <input id="minPrice" type="number" placeholder="Min Price" class="border p-2 rounded"/>
+      <input id="maxPrice" type="number" placeholder="Max Price" class="border p-2 rounded"/>
+      <input id="minBeds" type="number" placeholder="Min Beds" class="border p-2 rounded"/>
       <button onclick="applyFilters()" class="bg-blue-500 text-white px-4 py-2 rounded">Apply</button>
       <button onclick="resetFilters()" class="bg-gray-300 px-4 py-2 rounded">Reset</button>
     </div>
@@ -28,26 +40,42 @@
 let properties = [];
 let filtered = [];
 
-// 🔗 Replace with your public repo RAW URL
+// Replace with your public JSON URL
 const DATA_URL = "https://raw.githubusercontent.com/samjraywood/property-result-data/main/property-results.json";
 
+// Load data
 async function loadData() {
   const res = await fetch(DATA_URL);
   const data = await res.json();
 
-  // Convert from object map to array
   properties = Object.values(data);
-  filtered = properties;
+  filtered = [...properties];
+
+  populateLocationFilter();
   render();
 }
 
+// Populate source_location dropdown
+function populateLocationFilter() {
+  const select = document.getElementById("locationFilter");
+  const locations = [...new Set(properties.map(p => p.source_location).filter(Boolean))];
+  locations.forEach(loc => {
+    const opt = document.createElement("option");
+    opt.value = loc;
+    opt.textContent = loc;
+    select.appendChild(opt);
+  });
+}
+
+// Render property cards
 function render() {
   const container = document.getElementById("results");
   container.innerHTML = "";
 
   filtered.forEach(p => {
     const card = document.createElement("div");
-    card.className = "bg-white p-4 rounded-2xl shadow hover:shadow-lg transition";
+    card.className = "bg-white p-4 rounded-2xl shadow hover:shadow-lg transition cursor-pointer";
+    card.onclick = () => window.open(p.link, "_blank"); // click navigates to property
 
     card.innerHTML = `
       <div class="text-xl font-semibold mb-2">${p.price_display || "?"}</div>
@@ -55,32 +83,45 @@ function render() {
       <div class="text-sm mb-2">🛏 ${p.beds || "?"} | 🛁 ${p.baths || "?"}</div>
       <div class="text-sm mb-2">🌿 ${p.garden || "-"} | 🌾 ${p.land || "-"}</div>
       <div class="text-sm mb-2">⭐ Score: ${p.score || 0}</div>
-      <a href="${p.link}" target="_blank" class="text-blue-500 underline">View Property</a>
+      <div class="text-sm mb-2">Source: ${p.source_location || "-"}</div>
     `;
-
     container.appendChild(card);
   });
 }
 
+// Apply sorting & filtering
 function applyFilters() {
+  const sortBy = document.getElementById("sortBy").value;
+  const locationFilter = document.getElementById("locationFilter").value;
   const minPrice = parseInt(document.getElementById("minPrice").value) || 0;
   const maxPrice = parseInt(document.getElementById("maxPrice").value) || Infinity;
   const minBeds = parseInt(document.getElementById("minBeds").value) || 0;
 
-  filtered = properties.filter(p => {
-    return (p.price || 0) >= minPrice &&
-           (p.price || 0) <= maxPrice &&
-           (p.beds || 0) >= minBeds;
+  filtered = properties
+    .filter(p =>
+      (p.price || 0) >= minPrice &&
+      (p.price || 0) <= maxPrice &&
+      (p.beds || 0) >= minBeds &&
+      (!locationFilter || p.source_location === locationFilter)
+    );
+
+  filtered.sort((a, b) => {
+    if(sortBy === "price") return (a.price || 0) - (b.price || 0);
+    if(sortBy === "score") return (b.score || 0) - (a.score || 0);
+    if(sortBy === "first_seen") return new Date(b.first_seen) - new Date(a.first_seen);
+    if(sortBy === "beds") return (b.beds || 0) - (a.beds || 0);
   });
 
   render();
 }
 
+// Reset filters
 function resetFilters() {
-  filtered = properties;
   document.getElementById("minPrice").value = "";
   document.getElementById("maxPrice").value = "";
   document.getElementById("minBeds").value = "";
+  document.getElementById("locationFilter").value = "";
+  filtered = [...properties];
   render();
 }
 
