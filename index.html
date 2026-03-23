@@ -61,6 +61,7 @@ let map;
 let markers = [];
 let selectedId = null;
 let viewMode = 'grid';
+let mapMessageControl = null;
 
 const DATA_URL = "https://raw.githubusercontent.com/samjraywood/property-result-data/main/property-results.json";
 
@@ -76,7 +77,31 @@ function initMap(){
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
 }
 
+function showMapMessage(msg){
+  clearMapMessage();
+
+  mapMessageControl = L.control({ position: 'topright' });
+
+  mapMessageControl.onAdd = function () {
+    const div = L.DomUtil.create('div');
+    div.className = "bg-yellow-100 border border-yellow-300 text-yellow-800 px-3 py-2 rounded shadow text-sm";
+    div.innerHTML = msg;
+    return div;
+  };
+
+  mapMessageControl.addTo(map);
+}
+
+function clearMapMessage(){
+  if (mapMessageControl){
+    map.removeControl(mapMessageControl);
+    mapMessageControl = null;
+  }
+}
+
 function updateMap(){
+  clearMapMessage();
+
   markers.forEach(m=>map.removeLayer(m));
   markers=[];
 
@@ -130,16 +155,6 @@ function toggleView(mode){
   render();
 }
 
-function showMessage(msg){
-  const el = document.getElementById("status");
-  el.textContent = msg;
-
-  // revert back after 2 seconds
-  setTimeout(() => {
-    setStatus();
-  }, 2000);
-}  
-
 function render(){
   const c=document.getElementById("results");
 
@@ -159,29 +174,26 @@ function render(){
       const lat = Number(p.latitude);
       const lng = Number(p.longitude);
 
-      // If clicking same tile → deselect + reset map
       if (selectedId === p.link) {
         selectedId = null;
-        updateMap();   // 👈 reset to all markers
+        updateMap();
         render();
         return;
       }
 
-      // If no coordinates → show feedback, don't select
-      if (!lat || !lng) {
-        showMessage("No map location available for this property");
-        return;
-      }
-
-      // Normal select
       selectedId = p.link;
       render();
-      focusProperty(p);
+
+      if (lat && lng) {
+        clearMapMessage();
+        focusProperty(p);
+      } else {
+        showMapMessage("No map location available for this property");
+      }
     };
-    
+
     const thumb = p.thumbnail || "https://via.placeholder.com/300x200";
 
-    // TILE VIEW
     if(viewMode === 'grid'){
       d.innerHTML = `
         <img src="${thumb}" class="w-full h-48 object-cover rounded mb-2"
@@ -205,49 +217,41 @@ function render(){
           View
         </button>
       `;
+    } else {
+      d.innerHTML = `
+        <div class="grid grid-cols-[120px_1fr_1fr_auto] gap-3 items-center">
+
+          <img src="${thumb}" class="w-full h-24 object-cover rounded"
+            onerror="this.src='https://via.placeholder.com/150'" />
+
+          <div class="text-xs space-y-1">
+            <div><strong>💰</strong> ${formatPrice(p.price)}</div>
+            <div><strong>📍</strong> ${p.location||'-'}</div>
+            <div><strong>🛏</strong> ${p.beds||'-'}</div>
+            <div><strong>📐</strong> ${p.property_size||'-'}</div>
+            <div><strong>🧠</strong> ${(p.matches||[]).join(', ')}</div>
+            <div><strong>📡</strong> ${p.source_location||'-'}</div>
+          </div>
+
+          <div class="text-xs space-y-1">
+            <div><strong>⭐</strong> ${p.score||0}</div>
+            <div>&nbsp;</div>
+            <div><strong>🛁</strong> ${p.baths||'-'}</div>
+            <div><strong>🌳</strong> ${p.garden_size || p.garden || '-'}</div>
+            <div>&nbsp;</div>
+            <div><strong>🕒</strong> ${formatDate(p.last_seen)}</div>
+          </div>
+
+          <div class="flex items-center justify-center h-full">
+            <button onclick="window.open('${p.link}','_blank');event.stopPropagation();"
+              class="bg-blue-500 text-white px-3 py-1 rounded text-sm">
+              View
+            </button>
+          </div>
+
+        </div>
+      `;
     }
-
-    // LIST VIEW (FIXED ORDER)
-else {
-  d.innerHTML = `
-    <div class="grid grid-cols-[120px_1fr_1fr_auto] gap-3 items-center">
-
-      <!-- Image -->
-      <img src="${thumb}" 
-        class="w-full h-24 object-cover rounded"
-        onerror="this.src='https://via.placeholder.com/150'" />
-
-      <!-- Column 2 -->
-      <div class="text-xs space-y-1">
-        <div><strong>💰 Price:</strong> ${formatPrice(p.price)}</div>
-        <div class="col-span-2"><strong>📍 Location:</strong> ${p.location||'-'}</div>
-        <div><strong>🛏 Beds:</strong> ${p.beds||'-'}</div>
-        <div><strong>📐 Size:</strong> ${p.property_size||'-'}</div>
-        <div class="col-span-2"><strong>🧠 Matches</strong> ${(p.matches||[]).join(', ')}</div>
-        <div><strong>📡 Source:</strong> ${p.source_location||'-'}</div>
-      </div>
-
-      <!-- Column 3 -->
-      <div class="text-xs space-y-1">
-        <div><strong>⭐ Score:</strong> ${p.score||0}</div>
-        <div>&nbsp;</div>
-        <div><strong>🛁 Baths:</strong> ${p.baths||'-'}</div>
-        <div><strong>🌳 Garden:</strong> ${p.garden_size || p.garden || '-'}</div>
-        <div>&nbsp;</div>
-        <div><strong>🕒 Last Seen:</strong> ${formatDate(p.last_seen)}</div>
-      </div>
-
-      <!-- Button -->
-      <div class="flex items-center justify-center h-full">
-        <button onclick="window.open('${p.link}','_blank');event.stopPropagation();"
-          class="bg-blue-500 text-white px-3 py-1 rounded text-sm">
-          View
-        </button>
-      </div>
-
-    </div>
-  `;
-}
 
     c.appendChild(d);
   });
