@@ -225,21 +225,21 @@ function render(){
             onerror="this.src='https://via.placeholder.com/150'" />
 
           <div class="text-xs space-y-1">
-            <div><strong>💰</strong> ${formatPrice(p.price)}</div>
-            <div><strong>📍</strong> ${p.location||'-'}</div>
-            <div><strong>🛏</strong> ${p.beds||'-'}</div>
-            <div><strong>📐</strong> ${p.property_size||'-'}</div>
-            <div><strong>🧠</strong> ${(p.matches||[]).join(', ')}</div>
-            <div><strong>📡</strong> ${p.source_location||'-'}</div>
+            <div><strong>💰 Price:</strong> ${formatPrice(p.price)}</div>
+            <div><strong>📍 Location:</strong> ${p.location||'-'}</div>
+            <div><strong>🛏 Beds:</strong> ${p.beds||'-'}</div>
+            <div><strong>📐 Size:</strong> ${p.property_size||'-'}</div>
+            <div><strong>🧠 Matches:</strong> ${(p.matches||[]).join(', ')}</div>
+            <div><strong>📡 Source:</strong> ${p.source_location||'-'}</div>
           </div>
 
           <div class="text-xs space-y-1">
-            <div><strong>⭐</strong> ${p.score||0}</div>
+            <div><strong>⭐ Score:</strong> ${p.score||0}</div>
             <div>&nbsp;</div>
-            <div><strong>🛁</strong> ${p.baths||'-'}</div>
-            <div><strong>🌳</strong> ${p.garden_size || p.garden || '-'}</div>
+            <div><strong>🛁: Baths</strong> ${p.baths||'-'}</div>
+            <div><strong>🌳 Garden:</strong> ${p.garden_size || p.garden || '-'}</div>
             <div>&nbsp;</div>
-            <div><strong>🕒</strong> ${formatDate(p.last_seen)}</div>
+            <div><strong>🕒 Last Seen:</strong> ${formatDate(p.last_seen)}</div>
           </div>
 
           <div class="flex items-center justify-center h-full">
