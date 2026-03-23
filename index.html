@@ -10,6 +10,29 @@
 
   <style>
     .selected-tile { outline: 3px solid #3b82f6; }
+
+    .ribbon {
+      position: absolute;
+      top: 10px;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 600;
+      color: white;
+      z-index: 10;
+      transform: rotate(-15deg);
+      border-radius: 4px;
+    }
+
+    .ribbon-left {
+      left: -10px;
+      background: #16a34a;
+    }
+
+    .ribbon-right {
+      right: -10px;
+      background: #ca8a04;
+      transform: rotate(15deg);
+    }
   </style>
 </head>
 <body class="bg-gray-100 p-4">
@@ -99,31 +122,7 @@ function initMap(){
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
 }
 
-function showMapMessage(msg){
-  clearMapMessage();
-
-  mapMessageControl = L.control({ position: 'topright' });
-
-  mapMessageControl.onAdd = function () {
-    const div = L.DomUtil.create('div');
-    div.className = "bg-yellow-100 border border-yellow-300 text-yellow-800 px-3 py-2 rounded shadow text-sm";
-    div.innerHTML = msg;
-    return div;
-  };
-
-  mapMessageControl.addTo(map);
-}
-
-function clearMapMessage(){
-  if (mapMessageControl){
-    map.removeControl(mapMessageControl);
-    mapMessageControl = null;
-  }
-}
-
 function updateMap(){
-  clearMapMessage();
-
   markers.forEach(m=>map.removeLayer(m));
   markers=[];
 
@@ -143,20 +142,6 @@ function updateMap(){
       }));
     }
 
-    m.on("click", () => {
-      selectedId = p.link;
-      render();
-
-      setTimeout(() => {
-        const el = document.querySelector(`[data-id="${p.link}"]`);
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-      }, 50);
-
-      map.setView([lat, lng], 15);
-    });
-
     markers.push(m);
     bounds.push([lat,lng]);
   });
@@ -164,12 +149,6 @@ function updateMap(){
   if(bounds.length && !selectedId){
     map.fitBounds(bounds,{padding:[40,40]});
   }
-}
-
-function focusProperty(p){
-  const lat = Number(p.latitude);
-  const lng = Number(p.longitude);
-  if(lat && lng) map.setView([lat,lng],15);
 }
 
 async function loadData(){
@@ -211,46 +190,24 @@ function render(){
   filtered.forEach(p=>{
     const d=document.createElement("div");
     d.dataset.id = p.link;
-    d.className = "bg-white p-3 rounded-xl shadow cursor-pointer";
+    d.className = "bg-white p-3 rounded-xl shadow cursor-pointer relative overflow-hidden";
 
     if(selectedId===p.link) d.classList.add("selected-tile");
 
-    d.onclick = () => {
-      const lat = Number(p.latitude);
-      const lng = Number(p.longitude);
-
-      if (selectedId === p.link) {
-        selectedId = null;
-        updateMap();
-        render();
-        return;
-      }
-
-      selectedId = p.link;
-      render();
-
-      if (lat && lng) {
-        clearMapMessage();
-        focusProperty(p);
-      } else {
-        showMapMessage("No map location available for this property");
-      }
-    };
+    const ribbons = `
+      ${isNew(p.first_seen) ? '<div class="ribbon ribbon-left">NEW</div>' : ''}
+      ${isTopScore(p.score) ? '<div class="ribbon ribbon-right">TOP PICK</div>' : ''}
+    `;
 
     const thumb = p.thumbnail || "https://via.placeholder.com/300x200";
 
     if(viewMode === 'grid'){
       d.innerHTML = `
+        ${ribbons}
         <img src="${thumb}" class="w-full h-48 object-cover rounded mb-2"
           onerror="this.src='https://via.placeholder.com/300x200'" />
 
         <div class="text-sm space-y-1">
-
-          <div class="flex gap-2 flex-wrap mb-1">
-            ${isNew(p.first_seen) ? '<span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">🆕 New</span>' : ''}
-            ${isTopScore(p.score) ? '<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">⭐ Top Pick</span>' : ''}
-          </div>
-
           <div><strong>💰 Price:</strong> ${formatPrice(p.price)}</div>
           <div><strong>⭐ Score:</strong> ${p.score||0}</div>
           <div><strong>📍 Location:</strong> ${p.location||'-'}</div>
@@ -270,6 +227,7 @@ function render(){
       `;
     } else {
       d.innerHTML = `
+        ${ribbons}
         <div class="grid grid-cols-[120px_1fr_1fr_auto] gap-3 items-center">
 
           <img src="${thumb}" class="w-full h-24 object-cover rounded"
@@ -285,16 +243,12 @@ function render(){
           </div>
 
           <div class="text-xs space-y-1">
-            <div>
-              <strong>⭐ Score:</strong> ${p.score||0}
-              ${isTopScore(p.score) ? '<span class="ml-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">Top Pick</span>' : ''}
-            </div>
+            <div><strong>⭐ Score:</strong> ${p.score||0}</div>
             <div>&nbsp;</div>
             <div><strong>🛁: Baths</strong> ${p.baths||'-'}</div>
             <div><strong>🌳 Garden:</strong> ${p.garden_size || p.garden || '-'}</div>
             <div>&nbsp;</div>
             <div><strong>🕒 First Seen:</strong> ${formatDateTime(p.first_seen)}</div>
-            ${isNew(p.first_seen) ? '<div class="text-green-600 text-xs">🆕 New listing</div>' : ''}
           </div>
 
           <div class="flex items-center justify-center h-full">
