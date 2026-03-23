@@ -112,7 +112,31 @@ function updateMap(){
     const lng = Number(p.longitude);
     if(!lat || !lng) return;
 
-    const m=L.marker([lat,lng]).addTo(map);
+    const m = L.marker([lat, lng]).addTo(map);
+
+    // highlight selected marker
+    if (p.link === selectedId) {
+      m.setIcon(L.icon({
+        iconUrl: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+        iconSize: [32, 32]
+      }));
+    }
+
+    // click → sync to panel
+    m.on("click", () => {
+      selectedId = p.link;
+      render();
+
+      setTimeout(() => {
+        const el = document.querySelector(`[data-id="${p.link}"]`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 50);
+
+      map.setView([lat, lng], 15);
+    });
+
     markers.push(m);
     bounds.push([lat,lng]);
   });
@@ -166,6 +190,7 @@ function render(){
 
   filtered.forEach(p=>{
     const d=document.createElement("div");
+    d.dataset.id = p.link;
     d.className = "bg-white p-3 rounded-xl shadow cursor-pointer";
 
     if(selectedId===p.link) d.classList.add("selected-tile");
