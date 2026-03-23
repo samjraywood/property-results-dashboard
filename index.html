@@ -66,7 +66,29 @@ let mapMessageControl = null;
 const DATA_URL = "https://raw.githubusercontent.com/samjraywood/property-result-data/main/property-results.json";
 
 function formatPrice(v){ return v ? "£"+Number(v).toLocaleString() : "?" }
-function formatDate(v){ return v ? new Date(v).toLocaleDateString() : "-" }
+
+function formatDateTime(v){
+  if(!v) return "-";
+  const d = new Date(v);
+  return d.toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function isNew(v){
+  if(!v) return false;
+  const now = new Date();
+  const d = new Date(v);
+  return (now - d) <= (12 * 60 * 60 * 1000);
+}
+
+function isTopScore(score){
+  return (score || 0) >= 8;
+}
 
 function setStatus(){
   document.getElementById("status").textContent = `Showing ${filtered.length} of ${properties.length} properties`;
@@ -114,7 +136,6 @@ function updateMap(){
 
     const m = L.marker([lat, lng]).addTo(map);
 
-    // highlight selected marker
     if (p.link === selectedId) {
       m.setIcon(L.icon({
         iconUrl: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
@@ -122,7 +143,6 @@ function updateMap(){
       }));
     }
 
-    // click → sync to panel
     m.on("click", () => {
       selectedId = p.link;
       render();
@@ -225,6 +245,12 @@ function render(){
           onerror="this.src='https://via.placeholder.com/300x200'" />
 
         <div class="text-sm space-y-1">
+
+          <div class="flex gap-2 flex-wrap mb-1">
+            ${isNew(p.first_seen) ? '<span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">🆕 New</span>' : ''}
+            ${isTopScore(p.score) ? '<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">⭐ Top Pick</span>' : ''}
+          </div>
+
           <div><strong>💰 Price:</strong> ${formatPrice(p.price)}</div>
           <div><strong>⭐ Score:</strong> ${p.score||0}</div>
           <div><strong>📍 Location:</strong> ${p.location||'-'}</div>
@@ -234,7 +260,7 @@ function render(){
           <div><strong>🌳 Garden:</strong> ${p.garden_size || p.garden || '-'}</div>
           <div><strong>🧠 Matches:</strong> ${(p.matches||[]).join(', ')}</div>
           <div><strong>📡 Source:</strong> ${p.source_location||'-'}</div>
-          <div><strong>🕒 First Seen:</strong> ${formatDate(p.first_seen)}</div>
+          <div><strong>🕒 First Seen:</strong> ${formatDateTime(p.first_seen)}</div>
         </div>
 
         <button onclick="window.open('${p.link}','_blank');event.stopPropagation();"
@@ -259,12 +285,16 @@ function render(){
           </div>
 
           <div class="text-xs space-y-1">
-            <div><strong>⭐ Score:</strong> ${p.score||0}</div>
+            <div>
+              <strong>⭐ Score:</strong> ${p.score||0}
+              ${isTopScore(p.score) ? '<span class="ml-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">Top Pick</span>' : ''}
+            </div>
             <div>&nbsp;</div>
             <div><strong>🛁: Baths</strong> ${p.baths||'-'}</div>
             <div><strong>🌳 Garden:</strong> ${p.garden_size || p.garden || '-'}</div>
             <div>&nbsp;</div>
-            <div><strong>🕒 First Seen:</strong> ${formatDate(p.first_seen)}</div>
+            <div><strong>🕒 First Seen:</strong> ${formatDateTime(p.first_seen)}</div>
+            ${isNew(p.first_seen) ? '<div class="text-green-600 text-xs">🆕 New listing</div>' : ''}
           </div>
 
           <div class="flex items-center justify-center h-full">
