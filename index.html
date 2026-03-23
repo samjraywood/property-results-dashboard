@@ -134,7 +134,7 @@ function render(){
   const c=document.getElementById("results");
 
   c.className = viewMode === 'grid'
-    ? "flex flex-col gap-4"
+    ? "grid grid-cols-1 md:grid-cols-2 gap-4"
     : "flex flex-col gap-3";
 
   c.innerHTML="";
@@ -153,10 +153,10 @@ function render(){
 
     const thumb = p.thumbnail || "https://via.placeholder.com/300x200";
 
-    // ---------------- TILE VIEW ----------------
+    // TILE VIEW
     if(viewMode === 'grid'){
       d.innerHTML = `
-        <img src="${thumb}" class="w-full h-40 object-cover rounded mb-2"
+        <img src="${thumb}" class="w-full h-48 object-cover rounded mb-2"
           onerror="this.src='https://via.placeholder.com/300x200'" />
 
         <div class="text-sm space-y-1">
@@ -179,7 +179,7 @@ function render(){
       `;
     }
 
-    // ---------------- LIST VIEW ----------------
+    // LIST VIEW (FIXED ORDER)
     else {
       d.innerHTML = `
         <div class="grid grid-cols-[180px_1fr_1fr] gap-4 items-stretch">
@@ -187,29 +187,30 @@ function render(){
           <img src="${thumb}" class="w-full h-full object-cover rounded"
             onerror="this.src='https://via.placeholder.com/150'" />
 
-          <div class="text-sm space-y-1">
-            <div><strong>💰 Price:</strong> ${formatPrice(p.price)}</div>
-            <div><strong>🛏 Beds:</strong> ${p.beds||'-'}</div>
-            <div><strong>📐 Size:</strong> ${p.property_size||'-'}</div>
-            <div><strong>📡 Source:</strong> ${p.source_location||'-'}</div>
-          </div>
+          <!-- Row 1 -->
+          <div class="text-sm"><strong>💰 Price:</strong> ${formatPrice(p.price)}</div>
+          <div class="text-sm"><strong>⭐ Score:</strong> ${p.score||0}</div>
 
-          <div class="text-sm space-y-1">
-            <div><strong>⭐ Score:</strong> ${p.score||0}</div>
-            <div><strong>🛁 Baths:</strong> ${p.baths||'-'}</div>
-            <div><strong>🌳 Garden:</strong> ${p.garden_size || p.garden || '-'}</div>
-            <div><strong>🕒 Last Seen:</strong> ${formatDate(p.last_seen)}</div>
-          </div>
+          <!-- Row 2 -->
+          <div class="col-span-2 text-sm"><strong>📍 Location:</strong> ${p.location||'-'}</div>
 
-          <div class="col-span-2 text-sm">
-            <strong>📍 Location:</strong> ${p.location||'-'}
-          </div>
+          <!-- Row 3 -->
+          <div class="text-sm"><strong>🛏 Beds:</strong> ${p.beds||'-'}</div>
+          <div class="text-sm"><strong>🛁 Baths:</strong> ${p.baths||'-'}</div>
 
-          <div class="col-span-2 text-sm">
-            <strong>🧠 Matches:</strong> ${(p.matches||[]).join(', ')}
-          </div>
+          <!-- Row 4 -->
+          <div class="text-sm"><strong>📐 Size:</strong> ${p.property_size||'-'}</div>
+          <div class="text-sm"><strong>🌳 Garden:</strong> ${p.garden_size || p.garden || '-'}</div>
 
-          <div class="col-span-3 flex justify-end">
+          <!-- Row 5 -->
+          <div class="col-span-2 text-sm"><strong>🧠 Matches:</strong> ${(p.matches||[]).join(', ')}</div>
+
+          <!-- Row 6 -->
+          <div class="text-sm"><strong>📡 Source:</strong> ${p.source_location||'-'}</div>
+          <div class="text-sm"><strong>🕒 Last Seen:</strong> ${formatDate(p.last_seen)}</div>
+
+          <!-- Button -->
+          <div class="col-span-3 flex justify-end mt-2">
             <button onclick="window.open('${p.link}','_blank');event.stopPropagation();"
               class="bg-blue-500 text-white px-3 py-1 rounded">
               View
