@@ -209,7 +209,7 @@ function render(){
           <div><strong>🌳 Garden:</strong> ${p.garden_size || p.garden || '-'}</div>
           <div><strong>🧠 Matches:</strong> ${(p.matches||[]).join(', ')}</div>
           <div><strong>📡 Source:</strong> ${p.source_location||'-'}</div>
-          <div><strong>🕒 Last Seen:</strong> ${formatDate(p.last_seen)}</div>
+          <div><strong>🕒 First Seen:</strong> ${formatDate(p.first_seen)}</div>
         </div>
 
         <button onclick="window.open('${p.link}','_blank');event.stopPropagation();"
@@ -239,7 +239,7 @@ function render(){
             <div><strong>🛁: Baths</strong> ${p.baths||'-'}</div>
             <div><strong>🌳 Garden:</strong> ${p.garden_size || p.garden || '-'}</div>
             <div>&nbsp;</div>
-            <div><strong>🕒 Last Seen:</strong> ${formatDate(p.last_seen)}</div>
+            <div><strong>🕒 First Seen:</strong> ${formatDate(p.first_seen)}</div>
           </div>
 
           <div class="flex items-center justify-center h-full">
