@@ -209,7 +209,7 @@ function render(){
   filtered.forEach(p=>{
     const d=document.createElement("div");
     d.dataset.id = p.link;
-    d.className = "bg-white p-3 rounded-xl shadow cursor-pointer";
+    d.className = "bg-white p-3 rounded-xl shadow cursor-pointer relative";
 
     if(selectedId===p.link) d.classList.add("selected-tile");
 
@@ -267,6 +267,9 @@ function render(){
       `;
     } else {
       d.innerHTML = `
+        ${isTopScore(p.score) ? '<div class="absolute top-2 right-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded">Top Pick</div>' : ''}
+        ${isNew(p.first_seen) ? '<div class="absolute bottom-2 right-2 bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded">New</div>' : ''}
+
         <div class="grid grid-cols-[120px_1fr_1fr_auto] gap-3 items-center">
 
           <img src="${thumb}" class="w-full h-24 object-cover rounded"
@@ -290,15 +293,11 @@ function render(){
             <div><strong>🕒 First Seen:</strong> ${formatDateTime(p.first_seen)}</div>
           </div>
 
-          <div class="flex flex-col items-end gap-2">
-            ${isTopScore(p.score) ? '<div class="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded">Top Pick</div>' : ''}
-
+          <div class="flex items-center justify-center h-full">
             <button onclick="window.open('${p.link}','_blank');event.stopPropagation();"
               class="bg-blue-500 text-white px-3 py-1 rounded text-sm">
               View
             </button>
-
-            ${isNew(p.first_seen) ? '<div class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded">New</div>' : ''}
           </div>
 
         </div>
