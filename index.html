@@ -180,46 +180,46 @@ function render(){
     }
 
     // LIST VIEW (FIXED ORDER)
-    else {
-      d.innerHTML = `
-        <div class="grid grid-cols-[180px_1fr_1fr] gap-4 items-stretch">
+else {
+  d.innerHTML = `
+    <div class="grid grid-cols-[120px_1fr_1fr_auto] gap-3 items-center">
 
-          <img src="${thumb}" class="w-full h-full object-cover rounded"
-            onerror="this.src='https://via.placeholder.com/150'" />
+      <!-- Image -->
+      <img src="${thumb}" 
+        class="w-full h-24 object-cover rounded"
+        onerror="this.src='https://via.placeholder.com/150'" />
 
-          <!-- Row 1 -->
-          <div class="text-sm"><strong>💰 Price:</strong> ${formatPrice(p.price)}</div>
-          <div class="text-sm"><strong>⭐ Score:</strong> ${p.score||0}</div>
+      <!-- Column 2 -->
+      <div class="text-xs space-y-1">
+        <div><strong>💰</strong> ${formatPrice(p.price)}</div>
+        <div class="col-span-2"><strong>📍</strong> ${p.location||'-'}</div>
+        <div><strong>🛏</strong> ${p.beds||'-'}</div>
+        <div><strong>📐</strong> ${p.property_size||'-'}</div>
+        <div class="col-span-2"><strong>🧠</strong> ${(p.matches||[]).join(', ')}</div>
+        <div><strong>📡</strong> ${p.source_location||'-'}</div>
+      </div>
 
-          <!-- Row 2 -->
-          <div class="col-span-2 text-sm"><strong>📍 Location:</strong> ${p.location||'-'}</div>
+      <!-- Column 3 -->
+      <div class="text-xs space-y-1">
+        <div><strong>⭐</strong> ${p.score||0}</div>
+        <div>&nbsp;</div>
+        <div><strong>🛁</strong> ${p.baths||'-'}</div>
+        <div><strong>🌳</strong> ${p.garden_size || p.garden || '-'}</div>
+        <div>&nbsp;</div>
+        <div><strong>🕒</strong> ${formatDate(p.last_seen)}</div>
+      </div>
 
-          <!-- Row 3 -->
-          <div class="text-sm"><strong>🛏 Beds:</strong> ${p.beds||'-'}</div>
-          <div class="text-sm"><strong>🛁 Baths:</strong> ${p.baths||'-'}</div>
+      <!-- Button -->
+      <div class="flex items-center justify-center h-full">
+        <button onclick="window.open('${p.link}','_blank');event.stopPropagation();"
+          class="bg-blue-500 text-white px-3 py-1 rounded text-sm">
+          View
+        </button>
+      </div>
 
-          <!-- Row 4 -->
-          <div class="text-sm"><strong>📐 Size:</strong> ${p.property_size||'-'}</div>
-          <div class="text-sm"><strong>🌳 Garden:</strong> ${p.garden_size || p.garden || '-'}</div>
-
-          <!-- Row 5 -->
-          <div class="col-span-2 text-sm"><strong>🧠 Matches:</strong> ${(p.matches||[]).join(', ')}</div>
-
-          <!-- Row 6 -->
-          <div class="text-sm"><strong>📡 Source:</strong> ${p.source_location||'-'}</div>
-          <div class="text-sm"><strong>🕒 Last Seen:</strong> ${formatDate(p.last_seen)}</div>
-
-          <!-- Button -->
-          <div class="col-span-3 flex justify-end mt-2">
-            <button onclick="window.open('${p.link}','_blank');event.stopPropagation();"
-              class="bg-blue-500 text-white px-3 py-1 rounded">
-              View
-            </button>
-          </div>
-
-        </div>
-      `;
-    }
+    </div>
+  `;
+}
 
     c.appendChild(d);
   });
