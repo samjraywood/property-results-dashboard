@@ -33,12 +33,8 @@
     </select>
 
     <div class="flex items-center gap-2 ml-4">
-      <label class="flex items-center gap-1">
-        <input type="radio" name="view" value="grid" checked onchange="toggleView('grid')"> Tiles
-      </label>
-      <label class="flex items-center gap-1">
-        <input type="radio" name="view" value="list" onchange="toggleView('list')"> List
-      </label>
+      <label><input type="radio" name="view" value="grid" checked onchange="toggleView('grid')"> Tiles</label>
+      <label><input type="radio" name="view" value="list" onchange="toggleView('list')"> List</label>
     </div>
 
   </div>
@@ -46,18 +42,15 @@
   <div id="status" class="mb-3 text-sm text-gray-600"></div>
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
     <div class="lg:col-span-2">
       <div id="results"></div>
     </div>
 
     <div class="hidden lg:block">
       <div class="sticky top-4">
-    <div id="map" class="w-full h-[600px] rounded-xl shadow"></div>
-    
-  </div>
-</div>
-
+        <div id="map" class="w-full h-[600px] rounded-xl shadow"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -72,6 +65,7 @@ let viewMode = 'grid';
 const DATA_URL = "https://raw.githubusercontent.com/samjraywood/property-result-data/main/property-results.json";
 
 function formatPrice(v){ return v ? "£"+Number(v).toLocaleString() : "?" }
+function formatDate(v){ return v ? new Date(v).toLocaleDateString() : "-" }
 
 function setStatus(){
   document.getElementById("status").textContent = `Showing ${filtered.length} of ${properties.length} properties`;
@@ -140,69 +134,83 @@ function render(){
   const c=document.getElementById("results");
 
   c.className = viewMode === 'grid'
-    ? "grid grid-cols-1 md:grid-cols-2 gap-4"
+    ? "flex flex-col gap-4"
     : "flex flex-col gap-3";
 
   c.innerHTML="";
 
   filtered.forEach(p=>{
     const d=document.createElement("div");
-
-    d.className = viewMode === 'grid'
-      ? "bg-white p-3 rounded-xl shadow cursor-pointer"
-      : "bg-white p-3 rounded-xl shadow cursor-pointer";
+    d.className = "bg-white p-3 rounded-xl shadow cursor-pointer";
 
     if(selectedId===p.link) d.classList.add("selected-tile");
 
     d.onclick=()=>{
-      if(selectedId===p.link){
-        selectedId=null;
-        updateMap();
-        render();
-        return;
-      }
-      selectedId=p.link;
+      selectedId = selectedId===p.link ? null : p.link;
       render();
-      focusProperty(p);
+      if(selectedId) focusProperty(p);
     };
 
-    const thumb = p.thumbnail ? p.thumbnail : "https://via.placeholder.com/300x200";
+    const thumb = p.thumbnail || "https://via.placeholder.com/300x200";
 
-    const details = `
-      <div class="grid grid-cols-2 gap-x-4 text-sm">
-        <div>💰 <strong>Price:</strong> ${formatPrice(p.price)}</div>
-        <div>⭐ <strong>Score:</strong> ${p.score||0}</div>
-        <div>📍 <strong>Location:</strong> ${p.location||'-'}</div>
-        <div>📡 <strong>Source:</strong> ${p.source_location||'-'}</div>
-        <div>🛏 <strong>Beds:</strong> ${p.beds||'-'}</div>
-        <div>🛁 <strong>Baths:</strong> ${p.baths||'-'}</div>
-        <div class="col-span-2">🧠 <strong>Matches:</strong> ${(p.matches||[]).join(', ')}</div>
-      </div>
-    `;
+    // ---------------- TILE VIEW ----------------
+    if(viewMode === 'grid'){
+      d.innerHTML = `
+        <img src="${thumb}" class="w-full h-40 object-cover rounded mb-2"
+          onerror="this.src='https://via.placeholder.com/300x200'" />
 
-    d.innerHTML = viewMode === 'grid'
-      ? `
-        <img src="${thumb}" class="w-full h-32 object-cover rounded mb-2" onerror="this.src='https://via.placeholder.com/300x200'" />
-        ${details}
-        <div class="mt-2">
-          <button onclick="window.open('${p.link}','_blank');event.stopPropagation();" 
-            class="bg-blue-500 text-white px-3 py-1 rounded w-full">
-            View
-          </button>
+        <div class="text-sm space-y-1">
+          <div><strong>💰 Price:</strong> ${formatPrice(p.price)}</div>
+          <div><strong>⭐ Score:</strong> ${p.score||0}</div>
+          <div><strong>📍 Location:</strong> ${p.location||'-'}</div>
+          <div><strong>🛏 Beds:</strong> ${p.beds||'-'}</div>
+          <div><strong>🛁 Baths:</strong> ${p.baths||'-'}</div>
+          <div><strong>📐 Size:</strong> ${p.property_size||'-'}</div>
+          <div><strong>🌳 Garden:</strong> ${p.garden_size || p.garden || '-'}</div>
+          <div><strong>🧠 Matches:</strong> ${(p.matches||[]).join(', ')}</div>
+          <div><strong>📡 Source:</strong> ${p.source_location||'-'}</div>
+          <div><strong>🕒 Last Seen:</strong> ${formatDate(p.last_seen)}</div>
         </div>
-      `
-      : `
-        <div class="grid grid-cols-4 gap-4 items-center w-full">
-          
-          <img src="${thumb}" class="w-full h-20 object-cover rounded" 
+
+        <button onclick="window.open('${p.link}','_blank');event.stopPropagation();"
+          class="mt-3 bg-blue-500 text-white px-3 py-2 rounded w-full">
+          View
+        </button>
+      `;
+    }
+
+    // ---------------- LIST VIEW ----------------
+    else {
+      d.innerHTML = `
+        <div class="grid grid-cols-[180px_1fr_1fr] gap-4 items-stretch">
+
+          <img src="${thumb}" class="w-full h-full object-cover rounded"
             onerror="this.src='https://via.placeholder.com/150'" />
 
-          <div class="col-span-2 text-sm">
-            ${details}
+          <div class="text-sm space-y-1">
+            <div><strong>💰 Price:</strong> ${formatPrice(p.price)}</div>
+            <div><strong>🛏 Beds:</strong> ${p.beds||'-'}</div>
+            <div><strong>📐 Size:</strong> ${p.property_size||'-'}</div>
+            <div><strong>📡 Source:</strong> ${p.source_location||'-'}</div>
           </div>
 
-          <div class="flex justify-end">
-            <button onclick="window.open('${p.link}','_blank');event.stopPropagation();" 
+          <div class="text-sm space-y-1">
+            <div><strong>⭐ Score:</strong> ${p.score||0}</div>
+            <div><strong>🛁 Baths:</strong> ${p.baths||'-'}</div>
+            <div><strong>🌳 Garden:</strong> ${p.garden_size || p.garden || '-'}</div>
+            <div><strong>🕒 Last Seen:</strong> ${formatDate(p.last_seen)}</div>
+          </div>
+
+          <div class="col-span-2 text-sm">
+            <strong>📍 Location:</strong> ${p.location||'-'}
+          </div>
+
+          <div class="col-span-2 text-sm">
+            <strong>🧠 Matches:</strong> ${(p.matches||[]).join(', ')}
+          </div>
+
+          <div class="col-span-3 flex justify-end">
+            <button onclick="window.open('${p.link}','_blank');event.stopPropagation();"
               class="bg-blue-500 text-white px-3 py-1 rounded">
               View
             </button>
@@ -210,6 +218,7 @@ function render(){
 
         </div>
       `;
+    }
 
     c.appendChild(d);
   });
