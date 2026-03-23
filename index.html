@@ -2,17 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Property Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <style>
     .selected-tile { outline: 3px solid #3b82f6; }
   </style>
 </head>
-
 <body class="bg-gray-100 p-4">
 
 <div class="max-w-7xl mx-auto">
@@ -62,6 +61,7 @@ let map;
 let markers = [];
 let selectedId = null;
 let viewMode = 'list';
+let mapMessageControl = null;
 
 const DATA_URL = "https://raw.githubusercontent.com/samjraywood/property-result-data/main/property-results.json";
 
@@ -71,8 +71,11 @@ function formatDateTime(v){
   if(!v) return "-";
   const d = new Date(v);
   return d.toLocaleString(undefined, {
-    year:'numeric', month:'short', day:'numeric',
-    hour:'2-digit', minute:'2-digit'
+    year:'numeric',
+    month:'short',
+    day:'numeric',
+    hour:'2-digit',
+    minute:'2-digit'
   });
 }
 
@@ -86,13 +89,85 @@ function isTopScore(score){
 }
 
 function setStatus(){
-  document.getElementById("status").textContent =
-    `Showing ${filtered.length} of ${properties.length} properties`;
+  document.getElementById("status").textContent = `Showing ${filtered.length} of ${properties.length} properties`;
 }
 
 function initMap(){
   map=L.map('map').setView([51.5,-0.1],10);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+}
+
+function showMapMessage(msg){
+  clearMapMessage();
+
+  mapMessageControl = L.control({ position: 'topright' });
+
+  mapMessageControl.onAdd = function () {
+    const div = L.DomUtil.create('div');
+    div.className = "bg-yellow-100 border border-yellow-300 text-yellow-800 px-3 py-2 rounded shadow text-sm";
+    div.innerHTML = msg;
+    return div;
+  };
+
+  mapMessageControl.addTo(map);
+}
+
+function clearMapMessage(){
+  if (mapMessageControl){
+    map.removeControl(mapMessageControl);
+    mapMessageControl = null;
+  }
+}
+
+function updateMap(){
+  clearMapMessage();
+
+  markers.forEach(m=>map.removeLayer(m));
+  markers=[];
+
+  const bounds=[];
+
+  filtered.forEach(p=>{
+    const lat = Number(p.latitude);
+    const lng = Number(p.longitude);
+    if(!lat || !lng) return;
+
+    const m = L.marker([lat, lng]).addTo(map);
+
+    if (p.link === selectedId) {
+      m.setIcon(L.icon({
+        iconUrl: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+        iconSize: [32, 32]
+      }));
+    }
+
+    m.on("click", () => {
+      selectedId = p.link;
+      render();
+
+      setTimeout(() => {
+        const el = document.querySelector(`[data-id="${p.link}"]`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 50);
+
+      map.setView([lat, lng], 15);
+    });
+
+    markers.push(m);
+    bounds.push([lat,lng]);
+  });
+
+  if(bounds.length && !selectedId){
+    map.fitBounds(bounds,{padding:[40,40]});
+  }
+}
+
+function focusProperty(p){
+  const lat = Number(p.latitude);
+  const lng = Number(p.longitude);
+  if(lat && lng) map.setView([lat,lng],15);
 }
 
 async function loadData(){
@@ -125,7 +200,7 @@ function toggleView(mode){
 function render(){
   const c=document.getElementById("results");
 
-  c.className = viewMode==='grid'
+  c.className = viewMode === 'grid'
     ? "grid grid-cols-1 md:grid-cols-2 gap-4"
     : "flex flex-col gap-3";
 
@@ -134,26 +209,39 @@ function render(){
   filtered.forEach(p=>{
     const d=document.createElement("div");
     d.dataset.id = p.link;
-    d.className="bg-white p-3 rounded-xl shadow cursor-pointer relative";
+    d.className = "bg-white p-3 rounded-xl shadow cursor-pointer";
 
     if(selectedId===p.link) d.classList.add("selected-tile");
 
+    d.onclick = () => {
+      const lat = Number(p.latitude);
+      const lng = Number(p.longitude);
+
+      if (selectedId === p.link) {
+        selectedId = null;
+        updateMap();
+        render();
+        return;
+      }
+
+      selectedId = p.link;
+      render();
+
+      if (lat && lng) {
+        clearMapMessage();
+        focusProperty(p);
+      } else {
+        showMapMessage("No map location available for this property");
+      }
+    };
+
     const thumb = p.thumbnail || "https://via.placeholder.com/300x200";
 
-    // BADGES
-    const newBadge = isNew(p.first_seen)
-      ? `<div class="absolute top-2 left-2 bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded">New</div>`
-      : "";
-
-    const topBadge = isTopScore(p.score)
-      ? `<div class="absolute top-2 right-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded">Top Pick</div>`
-      : "";
-
-    if(viewMode==='grid'){
+    if(viewMode === 'grid'){
       d.innerHTML = `
         <div class="relative">
-          ${newBadge}
-          ${topBadge}
+          ${isNew(p.first_seen) ? '<div class="absolute top-2 left-2 bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded">New</div>' : ''}
+          ${isTopScore(p.score) ? '<div class="absolute top-2 right-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded">Top Pick</div>' : ''}
 
           <img src="${thumb}" class="w-full h-48 object-cover rounded mb-2"
             onerror="this.src='https://via.placeholder.com/300x200'" />
@@ -179,7 +267,7 @@ function render(){
       `;
     } else {
       d.innerHTML = `
-        <div class="grid grid-cols-[120px_1fr_1fr_auto] gap-3 items-center relative">
+        <div class="grid grid-cols-[120px_1fr_1fr_auto] gap-3 items-center">
 
           <img src="${thumb}" class="w-full h-24 object-cover rounded"
             onerror="this.src='https://via.placeholder.com/150'" />
@@ -202,13 +290,15 @@ function render(){
             <div><strong>🕒 First Seen:</strong> ${formatDateTime(p.first_seen)}</div>
           </div>
 
-          <div class="flex flex-col items-end justify-between h-full relative">
-            ${topBadge}
+          <div class="flex flex-col items-end gap-2">
+            ${isTopScore(p.score) ? '<div class="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded">Top Pick</div>' : ''}
+
             <button onclick="window.open('${p.link}','_blank');event.stopPropagation();"
               class="bg-blue-500 text-white px-3 py-1 rounded text-sm">
               View
             </button>
-            ${newBadge}
+
+            ${isNew(p.first_seen) ? '<div class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded">New</div>' : ''}
           </div>
 
         </div>
@@ -217,6 +307,8 @@ function render(){
 
     c.appendChild(d);
   });
+
+  updateMap();
 }
 
 function applyFilters(){
@@ -240,7 +332,9 @@ function applyFilters(){
   });
 
   selectedId=null;
+
   render();
+  updateMap();
   setStatus();
 }
 
