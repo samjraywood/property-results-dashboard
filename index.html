@@ -130,6 +130,16 @@ function toggleView(mode){
   render();
 }
 
+function showMessage(msg){
+  const el = document.getElementById("status");
+  el.textContent = msg;
+
+  // revert back after 2 seconds
+  setTimeout(() => {
+    setStatus();
+  }, 2000);
+}  
+
 function render(){
   const c=document.getElementById("results");
 
@@ -145,12 +155,30 @@ function render(){
 
     if(selectedId===p.link) d.classList.add("selected-tile");
 
-    d.onclick=()=>{
-      selectedId = selectedId===p.link ? null : p.link;
-      render();
-      if(selectedId) focusProperty(p);
-    };
+    d.onclick = () => {
+      const lat = Number(p.latitude);
+      const lng = Number(p.longitude);
 
+      // If clicking same tile → deselect + reset map
+      if (selectedId === p.link) {
+        selectedId = null;
+        updateMap();   // 👈 reset to all markers
+        render();
+        return;
+      }
+
+      // If no coordinates → show feedback, don't select
+      if (!lat || !lng) {
+        showMessage("No map location available for this property");
+        return;
+      }
+
+      // Normal select
+      selectedId = p.link;
+      render();
+      focusProperty(p);
+    };
+    
     const thumb = p.thumbnail || "https://via.placeholder.com/300x200";
 
     // TILE VIEW
