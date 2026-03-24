@@ -9,17 +9,20 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <style>
-    .selected-tile { outline: 3px solid #3b82f6; }
+    .selected-tile {
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.8); /* indigo */
+      border-radius: 0.75rem;
+    }
   </style>
 </head>
-<body class="bg-gradient-to-br from-gray-100 to-gray-200 p-4">
+<body class="bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 p-4">
 
 <div class="max-w-7xl mx-auto">
   <h1 class="text-2xl font-bold mb-4">🏡 Property Dashboard</h1>
 
-  <div class="bg-white/70 backdrop-blur-md p-3 rounded-xl shadow mb-4 flex flex-wrap gap-2 items-center border border-white/40"">
+  <div class="bg-indigo-600 text-white p-3 rounded-xl shadow-lg mb-4 flex flex-wrap gap-2 items-center">
 
-    <select id="sortBy" onchange="applyFilters()" class="border p-2 rounded">
+    <select id="sortBy" onchange="applyFilters()" class="bg-white/90 text-gray-800 border-none p-2 rounded shadow-sm">
       <option value="score_desc" selected>Score (desc)</option>
       <option value="score_asc">Score (asc)</option>
       <option value="price_desc">Price (desc)</option>
@@ -28,7 +31,7 @@
       <option value="first_seen_asc">First Seen (asc)</option>
     </select>
 
-    <select id="locationFilter" onchange="applyFilters()" class="border p-2 rounded">
+    <select id="locationFilter" onchange="applyFilters()" class="bg-white/90 text-gray-800 border-none p-2 rounded shadow-sm">
       <option value="">All Sources</option>
     </select>
 
