@@ -12,12 +12,12 @@
     .selected-tile { outline: 3px solid #3b82f6; }
   </style>
 </head>
-<body class="bg-gray-100 p-4">
+<body class="bg-gradient-to-br from-gray-100 to-gray-200 p-4">
 
 <div class="max-w-7xl mx-auto">
   <h1 class="text-2xl font-bold mb-4">🏡 Property Dashboard</h1>
 
-  <div class="bg-white p-3 rounded-xl shadow mb-4 flex flex-wrap gap-2 items-center">
+  <div class="bg-white/70 backdrop-blur-md p-3 rounded-xl shadow mb-4 flex flex-wrap gap-2 items-center border border-white/40"">
 
     <select id="sortBy" onchange="applyFilters()" class="border p-2 rounded">
       <option value="score_desc" selected>Score (desc)</option>
