@@ -245,6 +245,8 @@ function render(){
 
           <img src="${thumb}" class="w-full h-48 object-cover rounded mb-2"
             onerror="this.src='https://via.placeholder.com/300x200'" />
+
+          ${completenessCircle(p.extraction_completeness)}
         </div>
 
         <div class="text-sm space-y-1">
@@ -274,6 +276,8 @@ function render(){
 
           <img src="${thumb}" class="w-full h-24 object-cover rounded"
             onerror="this.src='https://via.placeholder.com/150'" />
+              
+          ${completenessCircle(p.extraction_completeness)}
 
           <div class="text-xs space-y-1">
             <div><strong>💰 Price:</strong> ${formatPrice(p.price)}</div>
@@ -308,6 +312,55 @@ function render(){
   });
 
   updateMap();
+}
+
+function completenessCircle(v){
+  const val = Math.round(v || 0);
+
+  let color = "#ef4444"; // red
+  if(val >= 80) color = "#22c55e"; // green
+  else if(val >= 50) color = "#f59e0b"; // yellow
+
+  const radius = 16;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (val / 100) * circumference;
+
+  return `
+    <div class="absolute bottom-2 right-2 bg-white/80 backdrop-blur rounded-full p-1 shadow">
+      <svg width="40" height="40" viewBox="0 0 40 40">
+        <!-- background circle -->
+        <circle
+          cx="20" cy="20" r="${radius}"
+          stroke="#e5e7eb"
+          stroke-width="4"
+          fill="none"
+        />
+
+        <!-- progress -->
+        <circle
+          cx="20" cy="20" r="${radius}"
+          stroke="${color}"
+          stroke-width="4"
+          fill="none"
+          stroke-dasharray="${circumference}"
+          stroke-dashoffset="${offset}"
+          stroke-linecap="round"
+          transform="rotate(-90 20 20)"
+        />
+
+        <!-- text -->
+        <text
+          x="50%" y="50%"
+          dominant-baseline="middle"
+          text-anchor="middle"
+          font-size="10"
+          fill="#111827"
+        >
+          ${val}
+        </text>
+      </svg>
+    </div>
+  `;
 }
 
 function applyFilters(){
