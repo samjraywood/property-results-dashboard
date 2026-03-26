@@ -89,16 +89,13 @@ function isNew(v){
   return (new Date() - new Date(v)) <= (12*60*60*1000);
 }
 
-function isTopScore(score){
-  return (score||0) >= 50;
+function isTopScore(percent){
+  return (percent||0) > 90;
 }
 
 function getScorePercent(p){
   const val = Number(p?.score_percent);
   if (Number.isFinite(val)) return Math.max(0, Math.min(100, Math.round(val)));
-
-  const fallback = Number(p?.score);
-  if (Number.isFinite(fallback)) return Math.max(0, Math.min(100, Math.round(fallback)));
 
   return 0;
 }
