@@ -11,6 +11,7 @@
 
   <style>
     .selected-tile { outline: 2px solid #6b8e23; }
+    details > summary::-webkit-details-marker { display: none; }
   </style>
 </head>
 <body class="bg-gradient-to-br from-stone-100 via-stone-200 to-lime-100 p-4">
@@ -64,7 +65,7 @@ let filtered = [];
 let map;
 let markers = [];
 let selectedId = null;
-let viewMode = 'tile';
+let viewMode = 'grid';
 let mapMessageControl = null;
 
 const DATA_URL = "https://raw.githubusercontent.com/samjraywood/property-result-data/main/property-results.json";
@@ -90,6 +91,67 @@ function isNew(v){
 
 function isTopScore(score){
   return (score||0) >= 50;
+}
+
+function getScorePercent(p){
+  const val = Number(p?.score_percent);
+  if (Number.isFinite(val)) return Math.max(0, Math.min(100, Math.round(val)));
+
+  const fallback = Number(p?.score);
+  if (Number.isFinite(fallback)) return Math.max(0, Math.min(100, Math.round(fallback)));
+
+  return 0;
+}
+
+function normalizeBreakdownEntry(entry){
+  if (Array.isArray(entry)) {
+    return {
+      feature: String(entry[0] ?? "").trim(),
+      score: Number(entry[1] ?? 0)
+    };
+  }
+
+  if (entry && typeof entry === "object") {
+    const feature = String(
+      entry.feature ?? entry.name ?? entry.label ?? entry.signal ?? ""
+    ).trim();
+    const score = Number(entry.score ?? entry.value ?? entry.points ?? 0);
+    return { feature, score };
+  }
+
+  if (typeof entry === "string") {
+    const text = entry.trim();
+    const m = text.match(/([+-]?\d+(?:\.\d+)?)\s*$/);
+    const score = m ? Number(m[1]) : 0;
+    const feature = m ? text.slice(0, m.index).replace(/[:\-–]\s*$/, "").trim() : text;
+    return { feature, score };
+  }
+
+  return { feature: "", score: 0 };
+}
+
+function renderScoreBreakdown(breakdown){
+  const entries = (Array.isArray(breakdown) ? breakdown : [])
+    .map(normalizeBreakdownEntry)
+    .filter(item => item.feature);
+
+  if (!entries.length) {
+    return '<div class="text-gray-500">-</div>';
+  }
+
+  return entries.map(item => {
+    const positive = item.score >= 0;
+    const colorClass = positive ? "text-green-700" : "text-red-700";
+    const arrow = positive ? "&uarr;" : "&darr;";
+    const value = `${positive ? "+" : ""}${item.score}`;
+
+    return `
+      <div class="flex items-center justify-between gap-2 ${colorClass}">
+        <span class="truncate">${item.feature} (${value})</span>
+        <span class="text-xs font-semibold">${arrow}</span>
+      </div>
+    `;
+  }).join("");
 }
 
 function setStatus(){
@@ -240,28 +302,39 @@ function render(){
     };
 
     const thumb = p.thumbnail || "https://via.placeholder.com/300x200";
+    const scorePercent = getScorePercent(p);
+    const scoreBreakdown = renderScoreBreakdown(p.score_breakdown);
 
     if(viewMode === 'grid'){
       d.innerHTML = `
         <div class="relative">
           ${isNew(p.first_seen) ? '<div class="absolute top-2 left-2 bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded">New</div>' : ''}
-          ${isTopScore(p.score) ? '<div class="absolute top-2 right-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded">Top Pick</div>' : ''}
+          ${isTopScore(scorePercent) ? '<div class="absolute top-2 right-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded">Top Pick</div>' : ''}
 
           <img src="${thumb}" class="w-full h-48 object-cover rounded mb-2"
             onerror="this.src='https://via.placeholder.com/300x200'" />
 
-          ${completenessCircle(p.extraction_completeness)}
+          ${metricCircle(scorePercent, "Score", "left")}
+          ${metricCircle(p.extraction_completeness, "Completion", "right")}
         </div>
 
         <div class="text-sm space-y-1">
           <div><strong>💰 Price:</strong> ${formatPrice(p.price)}</div>
-          <div><strong>⭐ Score:</strong> ${p.score||0}</div>
           <div><strong>📍 Location:</strong> ${p.location||'-'}</div>
           <div><strong>🛏 Beds:</strong> ${p.beds||'-'}</div>
           <div><strong>🛁 Baths:</strong> ${p.baths||'-'}</div>
           <div><strong>📐 Size:</strong> ${p.property_size||'-'}</div>
           <div><strong>🌳 Garden:</strong> ${p.garden_size || p.garden || '-'}</div>
-          <div><strong>🧠 Matches:</strong> ${(p.matches||[]).join(', ')}</div>
+          <div class="relative group/tooltip" onclick="event.stopPropagation();">
+            <button type="button" class="text-left text-sm text-slate-800 underline decoration-dotted underline-offset-2 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-lime-500 rounded px-1 -ml-1">
+              <strong>🧠 Score Breakdown</strong>
+            </button>
+            <div class="pointer-events-none absolute left-0 top-full mt-1 z-20 w-72 max-w-[90vw] opacity-0 group-hover/tooltip:opacity-100 group-focus-within/tooltip:opacity-100 transition-opacity duration-150">
+              <div class="bg-white border border-slate-200 rounded-lg shadow-xl p-2 text-xs space-y-1 max-h-36 overflow-y-auto pointer-events-auto">
+                ${scoreBreakdown}
+              </div>
+            </div>
+          </div>
           <div><strong>📡 Source:</strong> ${p.source_location||'-'}</div>
           <div><strong>🕒 First Seen:</strong> ${formatDateTime(p.first_seen)}</div>
         </div>
@@ -274,32 +347,40 @@ function render(){
     } else {
       d.innerHTML = `
         <div class="absolute top-2 right-2 flex gap-1">
-          ${isTopScore(p.score) ? '<div class="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded">Top Pick</div>' : ''}
+          ${isTopScore(scorePercent) ? '<div class="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded">Top Pick</div>' : ''}
           ${isNew(p.first_seen) ? '<div class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded">New</div>' : ''}
         </div>
 
-        <div class="grid grid-cols-[120px_1fr_1fr_auto] gap-3 items-center">
+        <div class="grid grid-cols-[140px_1fr_auto] gap-3 items-start">
 
-          <img src="${thumb}" class="w-full h-24 object-cover rounded"
-            onerror="this.src='https://via.placeholder.com/150'" />
-              
-          ${completenessCircle(p.extraction_completeness)}
+          <div>
+            <img src="${thumb}" class="w-full h-24 object-cover rounded"
+              onerror="this.src='https://via.placeholder.com/150'" />
 
-          <div class="text-xs space-y-1">
+            <div class="mt-2 flex items-start justify-between gap-2">
+              ${metricCircleInline(scorePercent, "Score")}
+              ${metricCircleInline(p.extraction_completeness, "Completion")}
+            </div>
+          </div>
+
+          <div class="text-xs space-y-1 pt-1">
             <div><strong>💰 Price:</strong> ${formatPrice(p.price)}</div>
             <div><strong>📍 Location:</strong> ${p.location||'-'}</div>
             <div><strong>🛏 Beds:</strong> ${p.beds||'-'}</div>
+            <div><strong>🛁 Baths:</strong> ${p.baths||'-'}</div>
             <div><strong>📐 Size:</strong> ${p.property_size||'-'}</div>
-            <div><strong>🧠 Matches:</strong> ${(p.matches||[]).join(', ')}</div>
-            <div><strong>📡 Source:</strong> ${p.source_location||'-'}</div>
-          </div>
-
-          <div class="text-xs space-y-1">
-            <div><strong>⭐ Score:</strong> ${p.score||0}</div>
-            <div>&nbsp;</div>
-            <div><strong>🛁 Baths</strong> ${p.baths||'-'}</div>
             <div><strong>🌳 Garden:</strong> ${p.garden_size || p.garden || '-'}</div>
-            <div>&nbsp;</div>
+            <div class="relative group/tooltip" onclick="event.stopPropagation();">
+              <button type="button" class="text-left text-xs text-slate-800 underline decoration-dotted underline-offset-2 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-lime-500 rounded px-1 -ml-1">
+                <strong>🧠 Score Breakdown</strong>
+              </button>
+              <div class="pointer-events-none absolute left-0 top-full mt-1 z-20 w-72 max-w-[90vw] opacity-0 group-hover/tooltip:opacity-100 group-focus-within/tooltip:opacity-100 transition-opacity duration-150">
+                <div class="bg-white border border-slate-200 rounded-lg shadow-xl p-2 text-xs space-y-1 max-h-36 overflow-y-auto pointer-events-auto">
+                  ${scoreBreakdown}
+                </div>
+              </div>
+            </div>
+            <div><strong>📡 Source:</strong> ${p.source_location||'-'}</div>
             <div><strong>🕒 First Seen:</strong> ${formatDateTime(p.first_seen)}</div>
           </div>
 
@@ -321,7 +402,11 @@ function render(){
 }
 
 function completenessCircle(v){
-  const val = Math.round(v || 0);
+  return metricCircle(v, "Completion", "right");
+}
+
+function metricCircle(v, label, side){
+  const val = Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
 
   let color = "#ef4444"; // red
   if(val >= 80) color = "#22c55e"; // green
@@ -330,10 +415,12 @@ function completenessCircle(v){
   const radius = 16;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (val / 100) * circumference;
+  const sideClass = side === "left" ? "left-2" : "right-2";
 
   return `
-    <div class="absolute bottom-2 right-2 bg-white/80 backdrop-blur rounded-full p-1 shadow"
-         title="Extraction completeness">
+    <div class="absolute bottom-2 ${sideClass}">
+      <div class="relative bg-white/85 backdrop-blur rounded-full p-1 shadow"
+           title="${label}">
       <svg width="40" height="40" viewBox="0 0 40 40">
         <!-- background circle -->
         <circle
@@ -361,11 +448,70 @@ function completenessCircle(v){
           dominant-baseline="middle"
           text-anchor="middle"
           font-size="10"
+          font-weight="700"
           fill="#111827"
         >
-          ${val}
+          ${val}%
         </text>
       </svg>
+
+      <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-white text-gray-700 text-[9px] px-1.5 py-0.5 rounded-full border border-gray-200 leading-none">
+        ${label}
+      </div>
+      </div>
+    </div>
+  `;
+}
+
+function metricCircleInline(v, label){
+  const val = Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
+
+  let color = "#ef4444"; // red
+  if(val >= 80) color = "#22c55e"; // green
+  else if(val >= 50) color = "#f59e0b"; // yellow
+
+  const radius = 14;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (val / 100) * circumference;
+
+  return `
+    <div class="flex flex-col items-center">
+      <div class="bg-white/85 backdrop-blur rounded-full p-1 shadow" title="${label}">
+        <svg width="36" height="36" viewBox="0 0 40 40">
+          <circle
+            cx="20" cy="20" r="${radius}"
+            stroke="#e5e7eb"
+            stroke-width="4"
+            fill="none"
+          />
+
+          <circle
+            cx="20" cy="20" r="${radius}"
+            stroke="${color}"
+            stroke-width="4"
+            fill="none"
+            stroke-dasharray="${circumference}"
+            stroke-dashoffset="${offset}"
+            stroke-linecap="round"
+            transform="rotate(-90 20 20)"
+          />
+
+          <text
+            x="50%" y="50%"
+            dominant-baseline="middle"
+            text-anchor="middle"
+            font-size="9"
+            font-weight="700"
+            fill="#111827"
+          >
+            ${val}%
+          </text>
+        </svg>
+      </div>
+
+      <div class="mt-1 bg-white text-gray-700 text-[9px] px-1.5 py-0.5 rounded-full border border-gray-200 leading-none">
+        ${label}
+      </div>
     </div>
   `;
 }
@@ -380,8 +526,8 @@ function applyFilters(){
 
   filtered.sort((a,b)=>{
     switch(sort){
-      case 'score_desc': return (b.score||0)-(a.score||0);
-      case 'score_asc': return (a.score||0)-(b.score||0);
+      case 'score_desc': return getScorePercent(b)-getScorePercent(a);
+      case 'score_asc': return getScorePercent(a)-getScorePercent(b);
       case 'price_desc': return (b.price||0)-(a.price||0);
       case 'price_asc': return (a.price||0)-(b.price||0);
       case 'first_seen_desc': return new Date(b.first_seen)-new Date(a.first_seen);
