@@ -4,59 +4,960 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Property Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/samjraywood/property-results-dashboard/main/house_image.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <style>
-    .selected-tile { outline: 2px solid #6b8e23; }
-    details > summary::-webkit-details-marker { display: none; }
+    :root {
+      --bg: #f2efe8;
+      --panel: #ffffff;
+      --panel-soft: #f8f7f2;
+      --sidebar-bg: #f4f2eb;
+      --border: #d7ddd0;
+      --text: #2d322b;
+      --text-muted: #5c6658;
+      --primary: #627252;
+      --primary-soft: #e5eadc;
+      --secondary: #9ba994;
+      --shadow-sm: 0 1px 2px rgba(32, 39, 32, 0.04), 0 4px 12px rgba(32, 39, 32, 0.04);
+      --shadow-md: 0 8px 24px rgba(36, 42, 36, 0.08);
+      --radius-md: 6px;
+      --radius-lg: 8px;
+      --space-1: 8px;
+      --space-2: 16px;
+      --space-3: 24px;
+      --space-4: 32px;
+      --space-5: 40px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: radial-gradient(circle at 20% 0%, #f5f2ea 0%, #f1eee6 42%, #ece9e0 100%);
+      color: var(--text);
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.4;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .brand-name {
+      font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+      font-size: clamp(2.25rem, 3.8vw, 3rem);
+      line-height: 1;
+      letter-spacing: -0.02em;
+      color: #2f3b2d;
+      font-weight: 700;
+    }
+
+    .brand-banner {
+      background: linear-gradient(135deg, #d9e1cd 0%, #c9d2bc 100%);
+      border: 1px solid #b7c3a7;
+      border-radius: 0;
+      padding: var(--space-2) var(--space-3);
+      margin-bottom: 0;
+      box-shadow: 0 2px 8px rgba(65, 78, 58, 0.08);
+      position: relative;
+    }
+
+    .app-main {
+      margin-left: 0;
+      padding: 0 0 var(--space-4);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: var(--space-2);
+    }
+
+    .topbar-note {
+      color: #4b5a45;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      max-width: 460px;
+      text-align: right;
+      margin-left: auto;
+    }
+
+    .main-inner {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: var(--space-3) var(--space-3) 0;
+    }
+
+    .page-header {
+      margin-bottom: var(--space-2);
+    }
+
+    .page-title {
+      margin: 0;
+      font-size: clamp(1.15rem, 1.4vw, 1.35rem);
+      line-height: 1.2;
+      font-weight: 700;
+      color: #2a3028;
+      letter-spacing: -0.01em;
+    }
+
+    .page-subtitle {
+      margin-top: var(--space-1);
+      margin-bottom: 0;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Controls are grouped in a single surface to keep hierarchy clear and scannable. */
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-1);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      padding: 10px;
+      margin-bottom: var(--space-2);
+    }
+
+    .field {
+      height: 40px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--panel-soft);
+      color: var(--text);
+      padding: 0 10px;
+      font-size: 14px;
+      min-width: 170px;
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+
+    .field:focus-visible {
+      outline: none;
+      border-color: #b9c8a8;
+      box-shadow: 0 0 0 3px rgba(169, 186, 156, 0.2);
+    }
+
+    .view-switch {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid var(--border);
+      background: var(--panel-soft);
+      border-radius: 6px;
+      padding: 4px;
+    }
+
+    .view-switch input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .view-pill {
+      padding: 8px 12px;
+      border-radius: 4px;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 180ms ease;
+    }
+
+    .view-switch input:checked + .view-pill {
+      color: #293126;
+      background: #e3e9d8;
+    }
+
+    .status {
+      margin: 0 0 var(--space-2);
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: var(--space-2);
+      align-items: start;
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-2);
+    }
+
+    .results-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .map-column {
+      position: sticky;
+      top: var(--space-2);
+    }
+
+    .map-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      background: var(--panel);
+    }
+
+    #map {
+      width: 100%;
+      height: 620px;
+    }
+
+    .property-card {
+      position: relative;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      overflow: visible;
+      transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease, background-color 220ms ease;
+    }
+
+    .property-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 24px rgba(36, 42, 36, 0.1);
+      border-color: #cbd3c0;
+    }
+
+    /* Selected cards use a soft green tint instead of hard outlines to match the app aesthetic. */
+    .selected-tile {
+      background: linear-gradient(180deg, #f8faf4 0%, var(--primary-soft) 100%);
+      border-color: #afbc9f;
+      box-shadow: 0 0 0 2px rgba(155, 169, 148, 0.28), 0 8px 20px rgba(36, 42, 36, 0.08);
+    }
+
+    .card-image-wrap {
+      position: relative;
+      height: 206px;
+      overflow: hidden;
+      border-bottom: 1px solid #ebefe3;
+      border-top-left-radius: var(--radius-lg);
+      border-top-right-radius: var(--radius-lg);
+    }
+
+    .card-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .badge-stack {
+      position: absolute;
+      top: var(--space-1);
+      left: var(--space-1);
+      right: var(--space-1);
+      display: flex;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      backdrop-filter: blur(6px);
+      background: rgba(255, 255, 255, 0.85);
+      color: #3f493d;
+    }
+
+    .badge.new {
+      background: #e3ead7;
+      color: #3e5535;
+      border-color: #cedbbe;
+    }
+
+    .badge.top {
+      background: #f0ead6;
+      color: #715d38;
+      border-color: #e4d8b6;
+      margin-left: auto;
+    }
+
+    .metric-bubble {
+      position: absolute;
+      bottom: var(--space-1);
+      padding: 4px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid #d4dcc9;
+    }
+
+    .metric-left {
+      left: var(--space-1);
+    }
+
+    .metric-right {
+      right: var(--space-1);
+    }
+
+    .metric-caption {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: -8px;
+      padding: 2px 7px;
+      background: #fefefe;
+      border: 1px solid #d3dbc8;
+      border-radius: 999px;
+      font-size: 9px;
+      font-weight: 500;
+      color: #566053;
+      white-space: nowrap;
+    }
+
+    .card-content {
+      padding: var(--space-2);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-1);
+    }
+
+    .card-header {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
+      gap: 4px;
+    }
+
+    .property-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: #293126;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+      width: 100%;
+    }
+
+    .property-price {
+      margin: 0;
+      font-size: 21px;
+      font-weight: 700;
+      color: #263023;
+      line-height: 1.1;
+      white-space: normal;
+    }
+
+    .property-sub {
+      margin: 0;
+      color: #5d665a;
+      font-size: 13px;
+    }
+
+    .property-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-1);
+    }
+
+    .metric-chip {
+      border: 1px solid #dde4d4;
+      border-radius: 6px;
+      background: #f9fbf6;
+      padding: 8px;
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .chip-label {
+      font-size: 11px;
+      color: #76806e;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .chip-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #354035;
+      text-align: right;
+    }
+
+    .meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--space-1);
+      padding-top: var(--space-1);
+      border-top: 1px solid #e4eadb;
+    }
+
+    .meta-item {
+      font-size: 12px;
+      color: #475145;
+      min-width: 0;
+      max-width: 48%;
+    }
+
+    .meta-sub {
+      margin-top: 4px;
+      font-size: 11px;
+      color: #64705f;
+    }
+
+    .meta-k {
+      color: #6c7567;
+      margin-right: 4px;
+    }
+
+    .score-wrap {
+      position: relative;
+    }
+
+    .score-button {
+      border: 1px solid #ced8c1;
+      background: #f3f7ec;
+      padding: 6px 10px;
+      color: #354535;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+    }
+
+    .score-button:hover {
+      background: #e9f0df;
+      border-color: #bcc9ad;
+      transform: translateY(-1px);
+    }
+
+    .score-button::after {
+      content: "▾";
+      font-size: 11px;
+      line-height: 1;
+      color: #5b6a54;
+      transition: transform 150ms ease;
+    }
+
+    .score-wrap.open .score-button::after {
+      transform: rotate(180deg);
+    }
+
+    .score-button-value {
+      font-size: 12px;
+      font-weight: 700;
+      color: #2e402e;
+    }
+
+    .score-tooltip {
+      position: absolute;
+      right: 0;
+      bottom: calc(100% + 8px);
+      top: auto;
+      width: 320px;
+      max-width: min(320px, 86vw);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(4px) scale(0.98);
+      transition: opacity 160ms ease, transform 160ms ease;
+      z-index: 40;
+    }
+
+    .score-wrap.open .score-tooltip {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+
+    .score-tooltip-inner {
+      max-height: 180px;
+      overflow-y: auto;
+      border-radius: 10px;
+      border: 1px solid #ced8c1;
+      background: linear-gradient(180deg, #fcfdf9 0%, #f4f8ee 100%);
+      box-shadow: 0 14px 30px rgba(42, 53, 39, 0.18);
+      padding: 12px;
+      font-size: 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .breakdown-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 0;
+      color: #556052;
+    }
+
+    .breakdown-main {
+      min-width: 0;
+      flex: 1;
+      display: grid;
+      gap: 4px;
+    }
+
+    .breakdown-feature {
+      color: #495446;
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    .breakdown-track {
+      height: 6px;
+      background: #e4ebd9;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid #d6e0ca;
+    }
+
+    .breakdown-fill {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+    }
+
+    .breakdown-fill.positive {
+      background: linear-gradient(90deg, #86b46b 0%, #5f8f4d 100%);
+    }
+
+    .breakdown-fill.negative {
+      background: linear-gradient(90deg, #d28f7f 0%, #b96e5f 100%);
+    }
+
+    .breakdown-points {
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 3px 7px;
+      background: #edf3e4;
+      border: 1px solid #d3dec5;
+      color: #3e4f3a;
+    }
+
+    .breakdown-row.positive {
+      color: #3f6440;
+    }
+
+    .breakdown-row.negative {
+      color: #7b4a44;
+    }
+
+    .view-button {
+      width: 100%;
+      border: 1px solid #b8c5a8;
+      border-radius: 6px;
+      padding: 10px 12px;
+      background: linear-gradient(180deg, #687b53 0%, #60724e 100%);
+      color: #f6f8f2;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: transform 180ms ease, filter 180ms ease;
+    }
+
+    .view-button:focus-visible,
+    .score-button:focus-visible,
+    .field:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(155, 169, 148, 0.28);
+    }
+
+    .view-button:hover {
+      filter: brightness(1.04);
+      transform: translateY(-1px);
+    }
+
+    .list-layout {
+      position: relative;
+      display: grid;
+      grid-template-columns: 176px minmax(0, 1fr) 120px;
+      gap: 12px;
+      padding: 12px;
+      align-items: stretch;
+    }
+
+    .list-media {
+      height: 100%;
+    }
+
+    .list-image {
+      width: 100%;
+      height: 100%;
+      border-radius: 6px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .list-metrics {
+      margin-top: var(--space-1);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .metric-inline {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .metric-inline-label {
+      font-size: 9px;
+      color: #667063;
+      border-radius: 999px;
+      border: 1px solid #dbe2d0;
+      background: #ffffff;
+      padding: 2px 7px;
+    }
+
+    .list-main h3 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+      color: #293126;
+    }
+
+    .list-main .list-price {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.1;
+      color: #263023;
+      font-weight: 700;
+    }
+
+    .list-main p {
+      margin: 2px 0 8px;
+      color: #6c7468;
+      font-size: 13px;
+    }
+
+    .list-details {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-1);
+      font-size: 12px;
+      color: #4f584d;
+      margin-bottom: 8px;
+    }
+
+    .list-detail-item {
+      border: 1px solid #e0e6d8;
+      border-radius: 6px;
+      background: #f9fbf6;
+      padding: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .list-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-1);
+      padding-top: 6px;
+      border-top: 1px solid #e4eadb;
+    }
+
+    .list-meta-main {
+      min-width: 0;
+      font-size: 12px;
+      color: #475145;
+    }
+
+    .list-meta-sub {
+      margin-top: 3px;
+      font-size: 11px;
+      color: #64705f;
+    }
+
+    .list-label {
+      font-size: 10px;
+      color: #7a8373;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .list-value {
+      color: #435040;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: right;
+    }
+
+    .list-aside {
+      min-width: 110px;
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .list-badges {
+      top: var(--space-1);
+      left: auto;
+      right: var(--space-1);
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    .truncate {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .map-inline-message {
+      background: #efe9d7;
+      border: 1px solid #ddd2ad;
+      color: #63573c;
+      padding: 8px 10px;
+      border-radius: 6px;
+      box-shadow: var(--shadow-sm);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .empty-text {
+      color: #778071;
+      font-size: 12px;
+    }
+
+    @media (max-width: 1280px) {
+      .content-grid {
+        grid-template-columns: minmax(0, 1fr) 300px;
+      }
+    }
+
+    @media (max-width: 1120px) {
+      .content-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .map-column {
+        position: static;
+      }
+
+      #map {
+        height: 340px;
+      }
+
+      .results-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 900px) {
+      .brand-banner {
+        padding: var(--space-2);
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+
+      .topbar-note {
+        text-align: left;
+        max-width: none;
+        margin-left: 0;
+        font-size: 13px;
+      }
+
+      .main-inner {
+        padding: var(--space-2) var(--space-2) 0;
+      }
+
+      .results-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .list-layout {
+        grid-template-columns: 140px minmax(0, 1fr) 100px;
+        gap: 10px;
+        padding: 10px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .brand-banner {
+        padding: var(--space-1) var(--space-2);
+      }
+
+      .brand-name {
+        font-size: 1.9rem;
+      }
+
+      .topbar-note {
+        font-size: 12px;
+      }
+
+      .main-inner {
+        padding: var(--space-2) var(--space-1) 0;
+      }
+
+      .list-layout {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .list-media {
+        height: 180px;
+      }
+
+      .list-image {
+        height: 100%;
+        border-radius: 6px 6px 0 0;
+      }
+
+      .list-details {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .list-aside {
+        min-width: 0;
+      }
+
+      .list-meta-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .score-button {
+        font-size: 11px;
+      }
+
+      .card-header {
+        align-items: flex-start;
+      }
+
+      .property-price {
+        white-space: normal;
+      }
+
+      .toolbar {
+        gap: 6px;
+      }
+
+      .field {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .view-switch {
+        margin-left: 0;
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .results-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .property-meta {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
   </style>
 </head>
-<body class="bg-gradient-to-br from-stone-100 via-stone-200 to-lime-100 p-4">
-
-<div class="max-w-7xl mx-auto">
-  <h1 class="flex items-center gap-3 text-2xl font-semibold mb-4 text-slate-800">
-    <img src="https://raw.githubusercontent.com/samjraywood/property-results-dashboard/main/house_image.png" class="w-10 h-10 opacity-80" />
-    Property Dashboard
-  </h1>
-
-  <div class="bg-lime-700 text-white p-3 rounded-xl shadow-lg mb-4 flex flex-wrap gap-2 items-center">
-
-    <select id="sortBy" onchange="applyFilters()" class="bg-white/90 text-gray-800 border-none p-2 rounded shadow-sm">
-      <option value="score_desc" selected>Score (desc)</option>
-      <option value="score_asc">Score (asc)</option>
-      <option value="price_desc">Price (desc)</option>
-      <option value="price_asc">Price (asc)</option>
-      <option value="first_seen_desc">First Seen (desc)</option>
-      <option value="first_seen_asc">First Seen (asc)</option>
-    </select>
-
-    <select id="locationFilter" onchange="applyFilters()" class="bg-white/90 text-gray-800 border-none p-2 rounded shadow-sm">
-      <option value="">All Sources</option>
-    </select>
-
-    <div class="flex items-center gap-2 ml-4">
-      <label><input type="radio" name="view" value="list" onchange="toggleView('list')"> List</label>
-      <label><input type="radio" name="view" value="grid" checked onchange="toggleView('grid')"> Tiles</label>
-    </div>
-
-  </div>
-
-  <div id="status" class="mb-3 text-sm text-gray-600"></div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-    <div class="lg:col-span-2">
-      <div id="results"></div>
-    </div>
-
-    <div class="hidden lg:block">
-      <div class="sticky top-4">
-        <div id="map" class="w-full h-[600px] rounded-xl shadow"></div>
+<body>
+<div class="app-shell">
+  <main class="app-main">
+    <div class="brand-banner">
+      <div class="topbar">
+        <div class="brand">
+          <span class="brand-name">Foray</span>
+        </div>
+        <div class="topbar-note">
+          Your first foray into better property decisions
+        </div>
       </div>
     </div>
-  </div>
+    <div class="main-inner">
+      <header class="page-header">
+        <h1 class="page-title">Property Dashboard</h1>
+        <p class="page-subtitle">Explore scored listings, compare metrics, and focus top picks quickly.</p>
+      </header>
+
+      <div class="toolbar">
+        <select id="sortBy" onchange="applyFilters()" class="field">
+          <option value="score_desc" selected>Score (desc)</option>
+          <option value="score_asc">Score (asc)</option>
+          <option value="price_desc">Price (desc)</option>
+          <option value="price_asc">Price (asc)</option>
+          <option value="first_seen_desc">First Seen (desc)</option>
+          <option value="first_seen_asc">First Seen (asc)</option>
+        </select>
+
+        <select id="locationFilter" onchange="applyFilters()" class="field">
+          <option value="">All Sources</option>
+        </select>
+
+        <div class="view-switch" role="radiogroup" aria-label="View mode">
+          <label>
+            <input type="radio" name="view" value="list" onchange="toggleView('list')">
+            <span class="view-pill">List</span>
+          </label>
+          <label>
+            <input type="radio" name="view" value="grid" checked onchange="toggleView('grid')">
+            <span class="view-pill">Tiles</span>
+          </label>
+        </div>
+      </div>
+
+      <p id="status" class="status"></p>
+
+      <section class="content-grid">
+        <div>
+          <div id="results" class="results-grid"></div>
+        </div>
+
+        <aside class="map-column">
+          <div class="map-card">
+            <div id="map"></div>
+          </div>
+        </aside>
+      </section>
+    </div>
+  </main>
 </div>
 
 <script>
@@ -133,19 +1034,24 @@ function renderScoreBreakdown(breakdown){
     .filter(item => item.feature);
 
   if (!entries.length) {
-    return '<div class="text-gray-500">-</div>';
+    return '<div class="empty-text">-</div>';
   }
+
+  const maxAbs = Math.max(1, ...entries.map(item => Math.abs(Number(item.score) || 0)));
 
   return entries.map(item => {
     const positive = item.score >= 0;
-    const colorClass = positive ? "text-green-700" : "text-red-700";
-    const arrow = positive ? "&uarr;" : "&darr;";
+    const colorClass = positive ? "positive" : "negative";
     const value = `${positive ? "+" : ""}${item.score}`;
+    const strength = Math.max(8, Math.round((Math.abs(Number(item.score) || 0) / maxAbs) * 100));
 
     return `
-      <div class="flex items-center justify-between gap-2 ${colorClass}">
-        <span class="truncate">${item.feature} (${value})</span>
-        <span class="text-xs font-semibold">${arrow}</span>
+      <div class="breakdown-row ${colorClass}">
+        <div class="breakdown-main">
+          <span class="breakdown-feature truncate">${item.feature}</span>
+          <div class="breakdown-track"><span class="breakdown-fill ${colorClass}" style="width:${strength}%"></span></div>
+        </div>
+        <span class="breakdown-points">${value}</span>
       </div>
     `;
   }).join("");
@@ -167,7 +1073,7 @@ function showMapMessage(msg){
 
   mapMessageControl.onAdd = function () {
     const div = L.DomUtil.create('div');
-    div.className = "bg-yellow-100 border border-yellow-300 text-yellow-800 px-3 py-2 rounded shadow text-sm";
+    div.className = "map-inline-message";
     div.innerHTML = msg;
     return div;
   };
@@ -260,19 +1166,39 @@ function toggleView(mode){
   render();
 }
 
+function closeScoreBreakdowns(exceptWrap = null){
+  document.querySelectorAll('.score-wrap.open').forEach(wrap => {
+    if (exceptWrap && wrap === exceptWrap) return;
+    wrap.classList.remove('open');
+    const btn = wrap.querySelector('.score-button');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  });
+}
+
+function toggleScoreBreakdown(event, button){
+  event.stopPropagation();
+  const wrap = button.closest('.score-wrap');
+  if (!wrap) return;
+
+  const shouldOpen = !wrap.classList.contains('open');
+  closeScoreBreakdowns(wrap);
+  wrap.classList.toggle('open', shouldOpen);
+  button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+}
+
 function render(){
   const c=document.getElementById("results");
 
   c.className = viewMode === 'grid'
-    ? "grid grid-cols-1 md:grid-cols-2 gap-4"
-    : "flex flex-col gap-3";
+    ? "results-grid"
+    : "results-list";
 
   c.innerHTML="";
 
   filtered.forEach(p=>{
     const d=document.createElement("div");
     d.dataset.id = p.link;
-    d.className = "bg-white p-3 rounded-xl shadow cursor-pointer relative";
+    d.className = "property-card";
 
     if(selectedId===p.link) d.classList.add("selected-tile");
 
@@ -300,91 +1226,108 @@ function render(){
 
     const thumb = p.thumbnail || "https://via.placeholder.com/300x200";
     const scorePercent = getScorePercent(p);
+    const completionPercent = Math.max(0, Math.min(100, Math.round(Number(p.extraction_completeness) || 0)));
     const scoreBreakdown = renderScoreBreakdown(p.score_breakdown);
 
     if(viewMode === 'grid'){
       d.innerHTML = `
-        <div class="relative">
-          ${isNew(p.first_seen) ? '<div class="absolute top-2 left-2 bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded">New</div>' : ''}
-          ${isTopScore(scorePercent) ? '<div class="absolute top-2 right-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded">Top Pick</div>' : ''}
+        <div class="card-image-wrap">
+          <div class="badge-stack">
+            ${isNew(p.first_seen) ? '<div class="badge new">New</div>' : '<span></span>'}
+            ${isTopScore(scorePercent) ? '<div class="badge top">Top Pick</div>' : ''}
+          </div>
 
-          <img src="${thumb}" class="w-full h-48 object-cover rounded mb-2"
+          <img src="${thumb}" class="card-image"
             onerror="this.src='https://via.placeholder.com/300x200'" />
-
-          ${metricCircle(scorePercent, "Score", "left")}
-          ${metricCircle(p.extraction_completeness, "Completion", "right")}
         </div>
 
-        <div class="text-sm space-y-1">
-          <div><strong>💰 Price:</strong> ${formatPrice(p.price)}</div>
-          <div><strong>📍 Location:</strong> ${p.location||'-'}</div>
-          <div><strong>🛏 Beds:</strong> ${p.beds||'-'}</div>
-          <div><strong>🛁 Baths:</strong> ${p.baths||'-'}</div>
-          <div><strong>📐 Size:</strong> ${p.property_size||'-'}</div>
-          <div><strong>🌳 Garden:</strong> ${p.garden_size || p.garden || '-'}</div>
-          <div class="relative group/tooltip" onclick="event.stopPropagation();">
-            <button type="button" class="text-left text-sm text-slate-800 underline decoration-dotted underline-offset-2 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-lime-500 rounded px-1 -ml-1">
-              <strong>🧠 Score Breakdown</strong>
+        <div class="card-content">
+          <div class="card-header">
+            <h3 class="property-title truncate">${p.location||'Unknown Property'}</h3>
+            <p class="property-price">${formatPrice(p.price)}</p>
+            <p class="property-sub">${p.source_location||'-'}</p>
+          </div>
+
+          <div class="property-meta">
+            <div class="metric-chip"><span class="chip-label">Beds</span><span class="chip-value">${p.beds||'-'}</span></div>
+            <div class="metric-chip"><span class="chip-label">Baths</span><span class="chip-value">${p.baths||'-'}</span></div>
+            <div class="metric-chip"><span class="chip-label">Size</span><span class="chip-value">${p.property_size||'-'}</span></div>
+            <div class="metric-chip"><span class="chip-label">Garden</span><span class="chip-value">${p.garden_size || p.garden || '-'}</span></div>
+          </div>
+
+          <div class="meta-row">
+            <div class="meta-item truncate">
+              <span class="meta-k">First Seen:</span>${formatDateTime(p.first_seen)}
+              <div class="meta-sub">Extraction Completion: ${completionPercent}%</div>
+            </div>
+            <div class="score-wrap" onclick="event.stopPropagation();">
+            <button type="button" class="score-button" onclick="toggleScoreBreakdown(event, this)" aria-expanded="false">
+              <span>Score Breakdown</span>
+              <span class="score-button-value">${scorePercent}%</span>
             </button>
-            <div class="pointer-events-none absolute left-0 top-full mt-1 z-20 w-72 max-w-[90vw] opacity-0 group-hover/tooltip:opacity-100 group-focus-within/tooltip:opacity-100 transition-opacity duration-150">
-              <div class="bg-white border border-slate-200 rounded-lg shadow-xl p-2 text-xs space-y-1 max-h-36 overflow-y-auto pointer-events-auto">
+            <div class="score-tooltip">
+              <div class="score-tooltip-inner">
                 ${scoreBreakdown}
               </div>
             </div>
           </div>
-          <div><strong>📡 Source:</strong> ${p.source_location||'-'}</div>
-          <div><strong>🕒 First Seen:</strong> ${formatDateTime(p.first_seen)}</div>
-        </div>
+          </div>
 
-        <button onclick="window.open('${p.link}','_blank');event.stopPropagation();"
-          class="mt-3 bg-blue-500 text-white px-3 py-2 rounded w-full">
-          View
-        </button>
+          <button onclick="window.open('${p.link}','_blank');event.stopPropagation();"
+            class="view-button">
+            View Listing
+          </button>
+        </div>
       `;
     } else {
       d.innerHTML = `
-        <div class="absolute top-2 right-2 flex gap-1">
-          ${isTopScore(scorePercent) ? '<div class="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded">Top Pick</div>' : ''}
-          ${isNew(p.first_seen) ? '<div class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded">New</div>' : ''}
+        <div class="badge-stack list-badges">
+          ${isTopScore(scorePercent) ? '<div class="badge top">Top Pick</div>' : ''}
+          ${isNew(p.first_seen) ? '<div class="badge new">New</div>' : ''}
         </div>
 
-        <div class="grid grid-cols-[140px_1fr_auto] gap-3 items-start">
+        <div class="list-layout">
 
-          <div>
-            <img src="${thumb}" class="w-full h-24 object-cover rounded"
+          <div class="list-media">
+            <img src="${thumb}" class="list-image"
               onerror="this.src='https://via.placeholder.com/150'" />
-
-            <div class="mt-2 flex items-start justify-between gap-2">
-              ${metricCircleInline(scorePercent, "Score")}
-              ${metricCircleInline(p.extraction_completeness, "Completion")}
-            </div>
           </div>
 
-          <div class="text-xs space-y-1 pt-1">
-            <div><strong>💰 Price:</strong> ${formatPrice(p.price)}</div>
-            <div><strong>📍 Location:</strong> ${p.location||'-'}</div>
-            <div><strong>🛏 Beds:</strong> ${p.beds||'-'}</div>
-            <div><strong>🛁 Baths:</strong> ${p.baths||'-'}</div>
-            <div><strong>📐 Size:</strong> ${p.property_size||'-'}</div>
-            <div><strong>🌳 Garden:</strong> ${p.garden_size || p.garden || '-'}</div>
-            <div class="relative group/tooltip" onclick="event.stopPropagation();">
-              <button type="button" class="text-left text-xs text-slate-800 underline decoration-dotted underline-offset-2 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-lime-500 rounded px-1 -ml-1">
-                <strong>🧠 Score Breakdown</strong>
-              </button>
-              <div class="pointer-events-none absolute left-0 top-full mt-1 z-20 w-72 max-w-[90vw] opacity-0 group-hover/tooltip:opacity-100 group-focus-within/tooltip:opacity-100 transition-opacity duration-150">
-                <div class="bg-white border border-slate-200 rounded-lg shadow-xl p-2 text-xs space-y-1 max-h-36 overflow-y-auto pointer-events-auto">
-                  ${scoreBreakdown}
+          <div class="list-main">
+            <h3 class="truncate">${p.location||'Unknown Property'}</h3>
+            <p class="list-price">${formatPrice(p.price)}</p>
+            <p class="truncate">${p.source_location||'-'}</p>
+
+            <div class="list-details">
+              <div class="list-detail-item"><span class="list-label">Beds</span><span class="list-value">${p.beds||'-'}</span></div>
+              <div class="list-detail-item"><span class="list-label">Baths</span><span class="list-value">${p.baths||'-'}</span></div>
+              <div class="list-detail-item"><span class="list-label">Size</span><span class="list-value">${p.property_size||'-'}</span></div>
+              <div class="list-detail-item"><span class="list-label">Garden</span><span class="list-value">${p.garden_size || p.garden || '-'}</span></div>
+            </div>
+
+            <div class="list-meta-row">
+              <div class="list-meta-main truncate">
+                <span class="meta-k">First Seen:</span>${formatDateTime(p.first_seen)}
+                <div class="list-meta-sub">Extraction Completion: ${completionPercent}%</div>
+              </div>
+              <div class="score-wrap" onclick="event.stopPropagation();">
+                <button type="button" class="score-button" onclick="toggleScoreBreakdown(event, this)" aria-expanded="false">
+                  <span>Score Breakdown</span>
+                  <span class="score-button-value">${scorePercent}%</span>
+                </button>
+                <div class="score-tooltip">
+                  <div class="score-tooltip-inner">
+                    ${scoreBreakdown}
+                  </div>
                 </div>
               </div>
             </div>
-            <div><strong>📡 Source:</strong> ${p.source_location||'-'}</div>
-            <div><strong>🕒 First Seen:</strong> ${formatDateTime(p.first_seen)}</div>
           </div>
 
-          <div class="flex items-center justify-center h-full">
+          <div class="list-aside">
             <button onclick="window.open('${p.link}','_blank');event.stopPropagation();"
-              class="bg-blue-500 text-white px-3 py-1 rounded text-sm">
-              View
+              class="view-button">
+              View Listing
             </button>
           </div>
 
@@ -412,11 +1355,11 @@ function metricCircle(v, label, side){
   const radius = 16;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (val / 100) * circumference;
-  const sideClass = side === "left" ? "left-2" : "right-2";
+  const sideClass = side === "left" ? "metric-left" : "metric-right";
 
   return `
-    <div class="absolute bottom-2 ${sideClass}">
-      <div class="relative bg-white/85 backdrop-blur rounded-full p-1 shadow"
+    <div class="metric-bubble ${sideClass}">
+      <div class="relative"
            title="${label}">
       <svg width="40" height="40" viewBox="0 0 40 40">
         <!-- background circle -->
@@ -446,13 +1389,13 @@ function metricCircle(v, label, side){
           text-anchor="middle"
           font-size="10"
           font-weight="700"
-          fill="#111827"
+          fill="#343c33"
         >
           ${val}%
         </text>
       </svg>
 
-      <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-white text-gray-700 text-[9px] px-1.5 py-0.5 rounded-full border border-gray-200 leading-none">
+      <div class="metric-caption">
         ${label}
       </div>
       </div>
@@ -472,8 +1415,8 @@ function metricCircleInline(v, label){
   const offset = circumference - (val / 100) * circumference;
 
   return `
-    <div class="flex flex-col items-center">
-      <div class="bg-white/85 backdrop-blur rounded-full p-1 shadow" title="${label}">
+    <div class="metric-inline">
+      <div class="metric-bubble" style="position: static;" title="${label}">
         <svg width="36" height="36" viewBox="0 0 40 40">
           <circle
             cx="20" cy="20" r="${radius}"
@@ -499,14 +1442,14 @@ function metricCircleInline(v, label){
             text-anchor="middle"
             font-size="9"
             font-weight="700"
-            fill="#111827"
+            fill="#343c33"
           >
             ${val}%
           </text>
         </svg>
       </div>
 
-      <div class="mt-1 bg-white text-gray-700 text-[9px] px-1.5 py-0.5 rounded-full border border-gray-200 leading-none">
+      <div class="metric-inline-label">
         ${label}
       </div>
     </div>
@@ -542,6 +1485,11 @@ function applyFilters(){
 
 initMap();
 loadData();
+
+document.addEventListener('click', () => closeScoreBreakdowns());
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') closeScoreBreakdowns();
+});
 </script>
 
 </body>
