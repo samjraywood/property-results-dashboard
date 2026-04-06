@@ -12,21 +12,6 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <style>
-      /* --- AI Score Breakdown styles --- */
-      .ai-score-wrap { min-width: 0; }
-      .ai-score-button { background: #e7eaf7; border-color: #bfc7e6; color: #3a3e5a; }
-      .ai-score-button:hover { background: #dbe1f2; border-color: #aeb7d8; }
-      .ai-score-tooltip { min-width: 260px; max-width: 340px; }
-      .ai-score-list { display: grid; gap: 10px; }
-      .ai-score-row { border-bottom: 1px solid #e3e7f2; padding-bottom: 8px; margin-bottom: 4px; }
-      .ai-score-row:last-child { border-bottom: none; }
-      .ai-score-feature { font-weight: 600; color: #3a3e5a; font-size: 13px; }
-      .ai-score-score { font-size: 13px; color: #2e402e; font-weight: 500; }
-      .ai-score-confidence { font-size: 12px; color: #5a5e7a; font-weight: 500; }
-      .ai-score-evidence { font-size: 12px; color: #4b4e5a; margin-top: 2px; }
-      .ai-evidence-label { color: #7a7e9a; font-weight: 500; margin-right: 2px; }
-
-
     :root {
       --bg: #f2efe8;
       --panel: #ffffff;
@@ -552,30 +537,100 @@
       gap: 8px;
     }
 
+    .feature-tooltip {
+      width: 380px;
+      max-width: min(380px, 90vw);
+    }
+
     .feature-list {
       display: grid;
-      gap: 4px;
+      gap: 10px;
+    }
+
+    .feature-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border: 1px solid #d8e1cc;
+      border-radius: 8px;
+      background: #f7faef;
+    }
+
+    .feature-summary-label {
+      color: #4d5948;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .feature-summary-value {
+      color: #2f3a2d;
+      font-size: 12px;
+      font-weight: 700;
     }
 
     .feature-row {
       display: grid;
-      grid-template-columns: 12px minmax(0, 1fr);
-      align-items: start;
-      gap: 6px;
-      color: #4f5a4c;
-      font-size: 12px;
+      gap: 8px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e0e8d5;
     }
 
-    .feature-text {
-      white-space: normal;
+    .feature-row:last-child {
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .feature-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .feature-name {
+      color: #33402f;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.3;
       overflow-wrap: anywhere;
+    }
+
+    .feature-source-pill {
+      flex-shrink: 0;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #edf2e3;
+      color: #51604c;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .feature-source-pill.llm {
+      background: #e7eaf7;
+      color: #47506d;
+    }
+
+    .feature-line {
+      display: grid;
+      grid-template-columns: 84px minmax(0, 1fr);
+      gap: 8px;
+      color: #4f5a4c;
+      font-size: 12px;
       line-height: 1.35;
     }
 
-    .feature-dot {
-      color: #708169;
-      font-weight: 700;
-      line-height: 1.2;
+    .feature-label {
+      color: #6b7565;
+      font-weight: 600;
+    }
+
+    .feature-value {
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
 
     .breakdown-row {
@@ -598,6 +653,19 @@
       color: #495446;
       font-size: 12px;
       line-height: 1.25;
+    }
+
+    .breakdown-value {
+      color: #667160;
+      font-size: 11px;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .breakdown-value-label {
+      color: #7a8574;
+      font-weight: 600;
+      margin-right: 4px;
     }
 
     .breakdown-track {
@@ -1073,8 +1141,6 @@
         <select id="sortBy" onchange="applyFilters()" class="field">
           <option value="score_desc" selected>Score (desc)</option>
           <option value="score_asc">Score (asc)</option>
-          <option value="ai_score_desc">AI Score (desc)</option>
-          <option value="ai_score_asc">AI Score (asc)</option>
           <option value="price_desc">Price (desc)</option>
           <option value="price_asc">Price (asc)</option>
           <option value="first_seen_desc">First Seen (desc)</option>
@@ -1172,18 +1238,6 @@ function buildDemoFixtures(list){
       previous_price: 500000,
       value: -10000,
       direction: "down"
-    },
-    llm_score: 0.82,
-    llm_score_percent: 82,
-    llm_score_breakdown: {
-      "location": { score: 0.9 },
-      "price": { score: 0.8 },
-      "garden": { score: 0.7 }
-    },
-    llm_features: {
-      "location": { confidence: 0.95, evidence: "Extracted from listing title and address." },
-      "price": { confidence: 0.85, evidence: "Parsed from price field in listing." },
-      "garden": { confidence: 0.7, evidence: "Mentioned in property description." }
     }
   };
 
@@ -1205,20 +1259,6 @@ function buildDemoFixtures(list){
       previous_price: 505000,
       value: 10000,
       direction: "up"
-    },
-    llm_score: 0.91,
-    llm_score_percent: 91,
-    llm_score_breakdown: {
-      "location": { score: 0.95 },
-      "price": { score: 0.92 },
-      "garden": { score: 0.85 },
-      "energy": { score: 0.8 }
-    },
-    llm_features: {
-      "location": { confidence: 0.98, evidence: "Found in listing headline and map." },
-      "price": { confidence: 0.92, evidence: "Confirmed from price history." },
-      "garden": { confidence: 0.85, evidence: "Garden size listed in features." },
-      "energy": { confidence: 0.8, evidence: "EPC rating mentioned in details." }
     }
   };
 
@@ -1321,11 +1361,28 @@ function getScorePercent(p){
   return 0;
 }
 
+function getExtractionCompletionPercent(p){
+  const val = Number(p?.extraction_completeness);
+  if (Number.isFinite(val)) return Math.max(0, Math.min(100, Math.round(val)));
+
+  return 0;
+}
+
+function escapeHTML(value){
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function normalizeBreakdownEntry(entry){
   if (Array.isArray(entry)) {
     return {
       feature: String(entry[0] ?? "").trim(),
-      score: Number(entry[1] ?? 0)
+      value: entry.length > 2 ? formatFeatureValue(entry[1]) : null,
+      score: Number(entry.length > 2 ? entry[2] ?? 0 : entry[1] ?? 0)
     };
   }
 
@@ -1333,8 +1390,10 @@ function normalizeBreakdownEntry(entry){
     const feature = String(
       entry.feature ?? entry.name ?? entry.label ?? entry.signal ?? ""
     ).trim();
-    const score = Number(entry.score ?? entry.value ?? entry.points ?? 0);
-    return { feature, score };
+    const hasExplicitScore = entry.score != null || entry.points != null;
+    const score = Number(hasExplicitScore ? (entry.score ?? entry.points ?? 0) : (entry.value ?? 0));
+    const value = hasExplicitScore ? formatFeatureValue(entry.value) : null;
+    return { feature, value, score };
   }
 
   if (typeof entry === "string") {
@@ -1345,7 +1404,7 @@ function normalizeBreakdownEntry(entry){
     return { feature, score };
   }
 
-  return { feature: "", score: 0 };
+  return { feature: "", value: null, score: 0 };
 }
 
 function renderScoreBreakdown(breakdown){
@@ -1364,11 +1423,15 @@ function renderScoreBreakdown(breakdown){
     const colorClass = positive ? "positive" : "negative";
     const value = `${positive ? "+" : ""}${item.score}`;
     const strength = Math.max(8, Math.round((Math.abs(Number(item.score) || 0) / maxAbs) * 100));
+    const detailHTML = item.value && item.value !== "Not available"
+      ? `<div class="breakdown-value"><span class="breakdown-value-label">Value:</span>${escapeHTML(item.value)}</div>`
+      : "";
 
     return `
       <div class="breakdown-row ${colorClass}">
         <div class="breakdown-main">
           <span class="breakdown-feature truncate">${item.feature}</span>
+          ${detailHTML}
           <div class="breakdown-track"><span class="breakdown-fill ${colorClass}" style="width:${strength}%"></span></div>
         </div>
         <span class="breakdown-points">${value}</span>
@@ -1377,26 +1440,99 @@ function renderScoreBreakdown(breakdown){
   }).join("");
 }
 
-function normalizeKeyFeature(feature){
-  if (typeof feature === "string") return feature.trim();
-  if (feature && typeof feature === "object") {
-    return String(feature.feature ?? feature.name ?? feature.label ?? feature.value ?? "").trim();
-  }
-  return "";
+function formatFeatureName(name){
+  return String(name ?? "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, char => char.toUpperCase());
 }
 
-function renderKeyFeatures(features){
-  const items = (Array.isArray(features) ? features : [])
-    .map(normalizeKeyFeature)
-    .filter(Boolean);
+function formatFeatureValue(value){
+  if (value == null || value === "") return "Not available";
+  if (Array.isArray(value)) {
+    const items = value.map(item => String(item ?? "").trim()).filter(Boolean);
+    return items.length ? items.join(", ") : "Not available";
+  }
+  if (typeof value === "object") {
+    const entries = Object.entries(value);
+    return entries.length ? JSON.stringify(value) : "Not available";
+  }
+  return String(value);
+}
 
-  if (!items.length) {
-    return '<div class="empty-text">-</div>';
+function normalizeFeatureEntries(features){
+  if (!features || typeof features !== "object" || Array.isArray(features)) {
+    return [];
   }
 
-  return `<div class="feature-list">${items
-    .map(item => `<div class="feature-row"><span class="feature-dot">•</span><span class="feature-text">${item}</span></div>`)
-    .join("")}</div>`;
+  return Object.entries(features).map(([name, entry]) => {
+    const data = entry && typeof entry === "object" && !Array.isArray(entry)
+      ? entry
+      : { value: entry };
+    const source = String(data.source ?? "unknown").trim() || "unknown";
+    const confidenceValue = Number(data.confidence);
+
+    return {
+      displayName: formatFeatureName(name),
+      value: formatFeatureValue(data.value),
+      source,
+      sourceLabel: source.toUpperCase(),
+      isLLM: source.toLowerCase() === "llm",
+      confidence: Number.isFinite(confidenceValue) ? `${Math.round(confidenceValue * 100)}%` : null,
+      evidence: data.evidence == null || data.evidence === "" ? null : String(data.evidence)
+    };
+  });
+}
+
+function renderFeaturesTooltip(features, completionPercent){
+  const items = normalizeFeatureEntries(features);
+
+  if (!items.length) {
+    return `
+      <div class="feature-list">
+        <div class="feature-summary">
+          <span class="feature-summary-label">Extraction Completion</span>
+          <span class="feature-summary-value">${completionPercent}%</span>
+        </div>
+        <div class="empty-text">No feature details available.</div>
+      </div>
+    `;
+  }
+
+  const rows = items.map(item => {
+    const lines = [
+      `<div class="feature-line"><span class="feature-label">Value</span><span class="feature-value">${escapeHTML(item.value)}</span></div>`
+    ];
+
+    if (item.isLLM && item.confidence) {
+      lines.push(`<div class="feature-line"><span class="feature-label">Confidence</span><span class="feature-value">${escapeHTML(item.confidence)}</span></div>`);
+    }
+
+    if (item.isLLM && item.evidence) {
+      lines.push(`<div class="feature-line"><span class="feature-label">Evidence</span><span class="feature-value">${escapeHTML(item.evidence)}</span></div>`);
+    }
+
+    return `
+      <div class="feature-row">
+        <div class="feature-heading">
+          <span class="feature-name">${escapeHTML(item.displayName)}</span>
+          <span class="feature-source-pill${item.isLLM ? ' llm' : ''}">${escapeHTML(item.sourceLabel)}</span>
+        </div>
+        ${lines.join("")}
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="feature-list">
+      <div class="feature-summary">
+        <span class="feature-summary-label">Extraction Completion</span>
+        <span class="feature-summary-value">${completionPercent}%</span>
+      </div>
+      ${rows}
+    </div>
+  `;
 }
 
 function setStatus(){
@@ -1570,12 +1706,9 @@ function render(){
 
     const thumb = p.thumbnail || "https://via.placeholder.com/300x200";
     const scorePercent = getScorePercent(p);
-    const completionPercent = Math.max(0, Math.min(100, Math.round(Number(p.extraction_completeness) || 0)));
+    const completionPercent = getExtractionCompletionPercent(p);
     const scoreBreakdownHTML = renderScoreBreakdown(p.score_breakdown);
-    const keyFeaturesHTML = renderKeyFeatures(p.key_features);
-    const keyFeaturesCount = Array.isArray(p.key_features)
-      ? p.key_features.map(normalizeKeyFeature).filter(Boolean).length
-      : 0;
+    const featuresHTML = renderFeaturesTooltip(p.features, completionPercent);
     const statusDisplay = getStatusDisplay(p);
     const priceChange = getPriceChangeDisplay(p);
     const priceChangeHTML = renderPriceChangeHTML(priceChange);
@@ -1586,9 +1719,6 @@ function render(){
     if(statusDisplay.isExpired) d.classList.add("expired-card");
 
     if(viewMode === 'grid'){
-      const llmScorePercent = (typeof p.llm_score_percent === 'number' && !isNaN(p.llm_score_percent)) ? String(p.llm_score_percent) : null;
-      const hasLLMFeatures = p.llm_features && typeof p.llm_features === 'object' && Object.keys(p.llm_features).length > 0;
-      const aiScoreBreakdownHTML = hasLLMFeatures ? renderAIScoreBreakdown(null, p.llm_features) : '';
       d.innerHTML = `
         <div class="card-image-wrap">
           <div class="badge-stack">
@@ -1626,12 +1756,12 @@ function render(){
             <div class="detail-controls" onclick="event.stopPropagation();">
               <div class="score-wrap">
                 <button type="button" class="score-button" onclick="toggleScoreBreakdown(event, this)" aria-expanded="false">
-                  <span>Key Features</span>
-                  <span class="score-button-value">${keyFeaturesCount}</span>
+                  <span>Features</span>
+                  <span class="score-button-value">${completionPercent}%</span>
                 </button>
-                <div class="score-tooltip">
+                <div class="score-tooltip feature-tooltip">
                   <div class="score-tooltip-inner">
-                    ${keyFeaturesHTML}
+                    ${featuresHTML}
                   </div>
                 </div>
               </div>
@@ -1646,13 +1776,6 @@ function render(){
                   </div>
                 </div>
               </div>
-              <div class="score-wrap ai-score-wrap${hasLLMFeatures ? '' : ' disabled'}">
-                <button type="button" class="score-button ai-score-button" ${hasLLMFeatures ? 'onclick="toggleAIScoreBreakdown(event, this)" aria-expanded="false"' : 'disabled aria-disabled="true"'}>
-                  <span>AI Score Breakdown</span>
-                  <span class="score-button-value">${llmScorePercent !== null ? llmScorePercent + '%' : 'N/A'}</span>
-                </button>
-                ${hasLLMFeatures ? `<div class="score-tooltip ai-score-tooltip"><div class="score-tooltip-inner">${aiScoreBreakdownHTML}</div></div>` : ''}
-              </div>
             </div>
           </div>
 
@@ -1663,9 +1786,6 @@ function render(){
         </div>
       `;
     } else {
-      const llmScorePercent = (typeof p.llm_score_percent === 'number' && !isNaN(p.llm_score_percent)) ? String(p.llm_score_percent) : null;
-      const hasLLMFeatures = p.llm_features && typeof p.llm_features === 'object' && Object.keys(p.llm_features).length > 0;
-      const aiScoreBreakdownHTML = hasLLMFeatures ? renderAIScoreBreakdown(null, p.llm_features) : '';
       d.innerHTML = `
         <div class="badge-stack list-badges">
           ${isTopPick(p) ? '<div class="badge top">Top Pick</div>' : ''}
@@ -1704,12 +1824,12 @@ function render(){
               <div class="detail-controls list-detail-controls" onclick="event.stopPropagation();">
                 <div class="score-wrap">
                   <button type="button" class="score-button" onclick="toggleScoreBreakdown(event, this)" aria-expanded="false">
-                    <span>Key Features</span>
-                    <span class="score-button-value">${keyFeaturesCount}</span>
+                    <span>Features</span>
+                    <span class="score-button-value">${completionPercent}%</span>
                   </button>
-                  <div class="score-tooltip">
+                  <div class="score-tooltip feature-tooltip">
                     <div class="score-tooltip-inner">
-                      ${keyFeaturesHTML}
+                      ${featuresHTML}
                     </div>
                   </div>
                 </div>
@@ -1723,13 +1843,6 @@ function render(){
                       ${scoreBreakdownHTML}
                     </div>
                   </div>
-                </div>
-                <div class="score-wrap ai-score-wrap${hasLLMFeatures ? '' : ' disabled'}">
-                  <button type="button" class="score-button ai-score-button" ${hasLLMFeatures ? 'onclick="toggleAIScoreBreakdown(event, this)" aria-expanded="false"' : 'disabled aria-disabled="true"'}>
-                    <span>AI Score Breakdown</span>
-                    <span class="score-button-value">${llmScorePercent !== null ? llmScorePercent + '%' : 'N/A'}</span>
-                  </button>
-                  ${hasLLMFeatures ? `<div class="score-tooltip ai-score-tooltip"><div class="score-tooltip-inner">${aiScoreBreakdownHTML}</div></div>` : ''}
                 </div>
                 <button onclick="window.open('${p.link}','_blank');event.stopPropagation();"
                   class="view-button">
@@ -1890,8 +2003,6 @@ function applyFilters(){
     switch(sort){
       case 'score_desc': return getScorePercent(b)-getScorePercent(a);
       case 'score_asc': return getScorePercent(a)-getScorePercent(b);
-      case 'ai_score_desc': return (b.llm_score_percent||0)-(a.llm_score_percent||0);
-      case 'ai_score_asc': return (a.llm_score_percent||0)-(b.llm_score_percent||0);
       case 'price_desc': return (b.price||0)-(a.price||0);
       case 'price_asc': return (a.price||0)-(b.price||0);
       case 'first_seen_desc': return new Date(b.first_seen)-new Date(a.first_seen);
@@ -1917,38 +2028,4 @@ document.addEventListener('keydown', (event) => {
 </script>
 
 </body>
-</html>
-<script>
-// --- AI Score Breakdown renderer ---
-function renderAIScoreBreakdown(breakdown, features) {
-  if (!features || typeof features !== 'object' || Object.keys(features).length === 0) {
-    return '<div class="empty-text">No LLM feature details available.</div>';
-  }
-  let html = '<div class="ai-score-list">';
-  html += '<div style="font-weight:600;margin-bottom:6px;">AI Feature Details</div>';
-  for (const [feature, obj] of Object.entries(features)) {
-    const value = obj.value !== undefined ? obj.value : '-';
-    const conf = obj.confidence;
-    const evidence = obj.evidence;
-    const confDisplay = conf != null ? `${Math.round(Number(conf)*100)}%` : 'N/A';
-    html += `<div class="ai-score-row">
-      <div class="ai-score-feature">${feature}</div>
-      <div class="ai-score-score"><span style='color:#7a7e9a;font-weight:500;'>Value:</span> ${value}</div>
-      <div class="ai-score-confidence"><span style='color:#7a7e9a;font-weight:500;'>Confidence:</span> ${confDisplay}</div>
-      <div class="ai-score-evidence"><span class='ai-evidence-label'>Evidence:</span> ${evidence ? evidence : '<span style=\'color:#aaa\'>No evidence provided</span>'}</div>
-    </div>`;
-  }
-  html += '</div>';
-  return html;
-}
-
-// --- AI Score Breakdown toggle logic ---
-function toggleAIScoreBreakdown(event, btn) {
-  event.stopPropagation();
-  const wrap = btn.closest('.score-wrap');
-  const isOpen = wrap.classList.contains('open');
-  document.querySelectorAll('.ai-score-wrap.open').forEach(el => el.classList.remove('open'));
-  if (!isOpen) wrap.classList.add('open');
-}
-</script>
 </html>
