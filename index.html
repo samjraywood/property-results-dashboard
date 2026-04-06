@@ -88,6 +88,14 @@
       gap: var(--space-2);
     }
 
+    .topbar-side {
+      margin-left: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
     .topbar-note {
       color: #4b5a45;
       font-size: 14px;
@@ -95,13 +103,57 @@
       letter-spacing: 0.01em;
       max-width: 460px;
       text-align: right;
-      margin-left: auto;
+    }
+
+    .page-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+    }
+
+    .page-header-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .banner-chat-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 1px solid #5a694c;
+      background: linear-gradient(135deg, #5f714f 0%, #506145 100%);
+      color: #f8f7f2;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      box-shadow: 0 8px 18px rgba(48, 59, 43, 0.14);
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    }
+
+    .banner-chat-link:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px rgba(48, 59, 43, 0.18);
+      border-color: #4f5f43;
+    }
+
+    .banner-chat-link:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(155, 169, 148, 0.28), 0 8px 18px rgba(48, 59, 43, 0.14);
     }
 
     .main-inner {
       max-width: 1440px;
       margin: 0 auto;
-      padding: var(--space-3) var(--space-3) 0;
+      padding: var(--space-2) var(--space-3) 0;
     }
 
     .page-header {
@@ -946,11 +998,27 @@
         gap: 6px;
       }
 
+      .topbar-side {
+        margin-left: 0;
+        width: 100%;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
       .topbar-note {
         text-align: left;
         max-width: none;
-        margin-left: 0;
         font-size: 13px;
+      }
+
+      .page-header-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .page-header-actions {
+        justify-content: flex-start;
       }
 
       .main-inner {
@@ -979,6 +1047,12 @@
 
       .topbar-note {
         font-size: 12px;
+      }
+
+      .banner-chat-link {
+        min-height: 36px;
+        padding: 0 14px;
+        font-size: 13px;
       }
 
       .main-inner {
@@ -1126,14 +1200,26 @@
         <div class="brand">
           <span class="brand-name">Foray</span>
         </div>
-        <div class="topbar-note">
-          Your first foray into better property decisions
+        <div class="topbar-side">
+          <div class="topbar-note">
+            Your first foray into better property decisions
+          </div>
         </div>
       </div>
     </div>
     <div class="main-inner">
       <header class="page-header">
-        <h1 class="page-title">Property Dashboard</h1>
+        <div class="page-header-row">
+          <h1 class="page-title">Property Dashboard</h1>
+          <div class="page-header-actions">
+            <a class="banner-chat-link" href="https://chatgpt.com/g/g-69d3e2f9e9e481919fa787288735213e-find-my-ideal-locations" target="_blank" rel="noopener noreferrer">
+              🏡 Find My Ideal Locations
+            </a>
+            <a class="banner-chat-link" href="https://chatgpt.com/g/g-69d3efd1c98c8191acf382a03f3d0267-refine-my-ideal-property" target="_blank" rel="noopener noreferrer">
+              🔍 Refine My Ideal Property
+            </a>
+          </div>
+        </div>
         <p class="page-subtitle">Explore scored listings, compare metrics, and focus top picks quickly.</p>
       </header>
 
