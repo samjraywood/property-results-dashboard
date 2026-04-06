@@ -243,7 +243,7 @@
     }
 
     .property-card:hover {
-      transform: translateY(-3px);
+      /* transform: translateY(-3px); */
       box-shadow: 0 10px 24px rgba(36, 42, 36, 0.1);
       border-color: #cbd3c0;
     }
@@ -372,6 +372,14 @@
       white-space: normal;
     }
 
+    .price-row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
     .property-sub {
       margin: 0;
       color: #5d665a;
@@ -412,7 +420,7 @@
 
     .meta-row {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
       flex-wrap: wrap;
       gap: var(--space-1);
@@ -440,6 +448,21 @@
 
     .score-wrap {
       position: relative;
+    }
+
+    .detail-controls {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 6px;
+      flex-wrap: nowrap;
+      justify-content: flex-end;
+      min-width: 182px;
+    }
+
+    .detail-controls .score-button {
+      width: 100%;
+      justify-content: space-between;
     }
 
     .score-button {
@@ -514,6 +537,102 @@
       gap: 8px;
     }
 
+    .feature-tooltip {
+      width: 380px;
+      max-width: min(380px, 90vw);
+    }
+
+    .feature-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .feature-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border: 1px solid #d8e1cc;
+      border-radius: 8px;
+      background: #f7faef;
+    }
+
+    .feature-summary-label {
+      color: #4d5948;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .feature-summary-value {
+      color: #2f3a2d;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .feature-row {
+      display: grid;
+      gap: 8px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e0e8d5;
+    }
+
+    .feature-row:last-child {
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .feature-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .feature-name {
+      color: #33402f;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+
+    .feature-source-pill {
+      flex-shrink: 0;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #edf2e3;
+      color: #51604c;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .feature-source-pill.llm {
+      background: #e7eaf7;
+      color: #47506d;
+    }
+
+    .feature-line {
+      display: grid;
+      grid-template-columns: 84px minmax(0, 1fr);
+      gap: 8px;
+      color: #4f5a4c;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .feature-label {
+      color: #6b7565;
+      font-weight: 600;
+    }
+
+    .feature-value {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
     .breakdown-row {
       display: flex;
       align-items: center;
@@ -534,6 +653,19 @@
       color: #495446;
       font-size: 12px;
       line-height: 1.25;
+    }
+
+    .breakdown-value {
+      color: #667160;
+      font-size: 11px;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .breakdown-value-label {
+      color: #7a8574;
+      font-weight: 600;
+      margin-right: 4px;
     }
 
     .breakdown-track {
@@ -604,7 +736,7 @@
     .list-layout {
       position: relative;
       display: grid;
-      grid-template-columns: 176px minmax(0, 1fr) 120px;
+      grid-template-columns: 176px minmax(0, 1fr);
       gap: 12px;
       padding: 12px;
       align-items: stretch;
@@ -658,6 +790,11 @@
       line-height: 1.1;
       color: #263023;
       font-weight: 700;
+    }
+
+    .list-main .price-row {
+      margin-top: 2px;
+      margin-bottom: 2px;
     }
 
     .list-main p {
@@ -721,10 +858,27 @@
       text-align: right;
     }
 
-    .list-aside {
-      min-width: 110px;
-      display: flex;
-      align-items: flex-end;
+    .list-detail-controls {
+      display: inline-flex;
+      flex-direction: row;
+      align-items: center;
+      align-self: center;
+      justify-content: center;
+      gap: 6px;
+      min-width: 0;
+      flex-wrap: nowrap;
+    }
+
+    .list-detail-controls .score-wrap {
+      min-width: 0;
+    }
+
+    .list-detail-controls .score-button,
+    .list-detail-controls .view-button {
+      width: auto;
+      min-width: 0;
+      justify-content: center;
+      text-align: center;
     }
 
     .list-badges {
@@ -808,7 +962,7 @@
       }
 
       .list-layout {
-        grid-template-columns: 140px minmax(0, 1fr) 100px;
+        grid-template-columns: 140px minmax(0, 1fr);
         gap: 10px;
         padding: 10px;
       }
@@ -849,14 +1003,21 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
-      .list-aside {
-        min-width: 0;
+      .list-detail-controls {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: flex-start;
       }
 
       .list-meta-row {
         flex-direction: column;
         align-items: flex-start;
         gap: 8px;
+      }
+
+      .detail-controls {
+        min-width: 0;
+        width: 100%;
       }
 
       .score-button {
@@ -896,6 +1057,65 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
+
+    /* Expired property styling */
+    .badge.expired {
+      background: #f5e8e8;
+      color: #8b3a3a;
+      border-color: #e0c0c0;
+    }
+
+    .property-card.expired-card {
+      opacity: 0.68;
+      background: #f9f8f6;
+    }
+
+    .property-card.expired-card:hover {
+      opacity: 0.85;
+    }
+
+    /* Price change indicator */
+    .price-change {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      margin-left: auto;
+      white-space: nowrap;
+    }
+
+    .price-change.down {
+      color: #275e30;
+      background: #e3f2e5;
+      border-color: #b8d9bc;
+    }
+
+    .price-change.up {
+      color: #8b2e2e;
+      background: #f5e6e6;
+      border-color: #e0bebf;
+    }
+
+    .price-change.flat {
+      color: #595d55;
+      background: #eeeeec;
+      border-color: #d5d5d2;
+    }
+
+    .price-was {
+      font-size: 13px;
+      color: #8a9186;
+      font-weight: 400;
+    }
+
+    .expired-date {
+      font-size: 11px;
+      color: #8b6060;
+    }
   </style>
 </head>
 <body>
@@ -929,6 +1149,20 @@
 
         <select id="locationFilter" onchange="applyFilters()" class="field">
           <option value="">All Sources</option>
+        </select>
+
+        <select id="statusFilter" onchange="applyFilters()" class="field">
+          <option value="all">All Statuses</option>
+          <option value="active" selected>Active</option>
+          <option value="expired">Expired</option>
+        </select>
+
+        <select id="priceMovement" onchange="applyFilters()" class="field">
+          <option value="">Any Price Movement</option>
+          <option value="down">Price Down ↓</option>
+          <option value="up">Price Up ↑</option>
+          <option value="flat">No Change</option>
+          <option value="none">No History</option>
         </select>
 
         <div class="view-switch" role="radiogroup" aria-label="View mode">
@@ -968,8 +1202,69 @@ let markers = [];
 let selectedId = null;
 let viewMode = 'grid';
 let mapMessageControl = null;
+let topPickSet = new Set();
 
 const DATA_URL = "https://raw.githubusercontent.com/samjraywood/property-result-data/main/property-results.json";
+
+// DEMO MODE BLOCK START (remove this block later if no longer needed)
+const DEMO_MODE = new URLSearchParams(window.location.search).get("demo") === "1";
+
+function buildDemoFixtures(list){
+  if (!DEMO_MODE) return list;
+
+  const base = Array.isArray(list) ? list : [];
+  const first = base[0] || {};
+  const second = base[1] || first;
+  const now = Date.now();
+  const isoNow = new Date(now).toISOString();
+  const iso7dAgo = new Date(now - (7 * 24 * 60 * 60 * 1000)).toISOString();
+  const iso21dAgo = new Date(now - (21 * 24 * 60 * 60 * 1000)).toISOString();
+
+  const expiredDemo = {
+    ...first,
+    link: `${first.link || "demo-listing"}#demo-expired`,
+    location: `${first.location || "Sample Listing"} (Demo Expired)`,
+    source_location: first.source_location || "Demo Source",
+    status: "expired",
+    expired_at: isoNow,
+    first_seen: first.first_seen || iso21dAgo,
+    last_seen: iso7dAgo,
+    price: 490000,
+    price_history: [
+      { date: iso21dAgo, price: 500000 },
+      { date: iso7dAgo, price: 490000 }
+    ],
+    price_change: {
+      previous_price: 500000,
+      value: -10000,
+      direction: "down"
+    }
+  };
+
+  const increasedDemo = {
+    ...second,
+    link: `${second.link || "demo-listing"}#demo-up`,
+    location: `${second.location || "Sample Listing"} (Demo Price Up)`,
+    source_location: second.source_location || "Demo Source",
+    status: "active",
+    expired_at: null,
+    first_seen: second.first_seen || iso21dAgo,
+    last_seen: isoNow,
+    price: 515000,
+    price_history: [
+      { date: iso21dAgo, price: 505000 },
+      { date: isoNow, price: 515000 }
+    ],
+    price_change: {
+      previous_price: 505000,
+      value: 10000,
+      direction: "up"
+    }
+  };
+
+  return [expiredDemo, increasedDemo, ...base];
+}
+// DEMO MODE BLOCK END
 
 function formatPrice(v){ return v ? "£"+Number(v).toLocaleString() : "?" }
 
@@ -990,8 +1285,73 @@ function isNew(v){
   return (new Date() - new Date(v)) <= (12*60*60*1000);
 }
 
-function isTopScore(percent){
-  return (percent||0) > 90;
+function getPriceChangeDisplay(p){
+  const pc = p.price_change || {};
+  if (pc.direction == null) {
+    return derivePriceChangeFromHistory(p.price_history);
+  }
+  return {
+    direction: pc.direction,
+    previousPrice: pc.previous_price,
+    changeValue: pc.value,
+    label: formatPriceChangeLabel(pc.direction, pc.value),
+  };
+}
+
+function derivePriceChangeFromHistory(history){
+  if (!history || history.length < 2) return null;
+  const current = history[history.length - 1].price;
+  const previous = history[history.length - 2].price;
+  const value = current - previous;
+  const direction = value > 0 ? "up" : value < 0 ? "down" : "flat";
+  return {
+    direction,
+    previousPrice: previous,
+    changeValue: value,
+    label: formatPriceChangeLabel(direction, value),
+  };
+}
+
+function formatPriceChangeLabel(direction, value){
+  if (direction === "down") return `↓ −${formatPrice(Math.abs(value))}`;
+  if (direction === "up") return `↑ +${formatPrice(value)}`;
+  if (direction === "flat") return "No change";
+  return "";
+}
+
+function getStatusDisplay(p){
+  if (p.status === "expired") {
+    let dateStr = null;
+    if (p.expired_at) {
+      dateStr = new Date(p.expired_at).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    }
+    return { isExpired: true, label: "Expired", date: dateStr };
+  }
+  return { isExpired: false, label: "Active", date: null };
+}
+
+function renderPriceChangeHTML(pcd){
+  if (!pcd || !pcd.label || pcd.direction === "flat" || pcd.direction == null) return "";
+  const dir = pcd.direction || "";
+  const ariaMap = { down: "Price reduced", up: "Price increased" };
+  const ariaLabel = ariaMap[dir] || "Price change";
+  return `<span class="price-change ${dir}" role="img" aria-label="${ariaLabel}">${pcd.label}</span>`;
+}
+
+function computeTopPickSet(list, count = 3){
+  const ranked = [...(Array.isArray(list) ? list : [])]
+    .sort((a, b) => getScorePercent(b) - getScorePercent(a))
+    .slice(0, Math.max(0, count));
+
+  topPickSet = new Set(ranked);
+}
+
+function isTopPick(property){
+  return topPickSet.has(property);
 }
 
 function getScorePercent(p){
@@ -1001,11 +1361,28 @@ function getScorePercent(p){
   return 0;
 }
 
+function getExtractionCompletionPercent(p){
+  const val = Number(p?.extraction_completeness);
+  if (Number.isFinite(val)) return Math.max(0, Math.min(100, Math.round(val)));
+
+  return 0;
+}
+
+function escapeHTML(value){
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function normalizeBreakdownEntry(entry){
   if (Array.isArray(entry)) {
     return {
       feature: String(entry[0] ?? "").trim(),
-      score: Number(entry[1] ?? 0)
+      value: entry.length > 2 ? formatFeatureValue(entry[1]) : null,
+      score: Number(entry.length > 2 ? entry[2] ?? 0 : entry[1] ?? 0)
     };
   }
 
@@ -1013,8 +1390,10 @@ function normalizeBreakdownEntry(entry){
     const feature = String(
       entry.feature ?? entry.name ?? entry.label ?? entry.signal ?? ""
     ).trim();
-    const score = Number(entry.score ?? entry.value ?? entry.points ?? 0);
-    return { feature, score };
+    const hasExplicitScore = entry.score != null || entry.points != null;
+    const score = Number(hasExplicitScore ? (entry.score ?? entry.points ?? 0) : (entry.value ?? 0));
+    const value = hasExplicitScore ? formatFeatureValue(entry.value) : null;
+    return { feature, value, score };
   }
 
   if (typeof entry === "string") {
@@ -1025,7 +1404,7 @@ function normalizeBreakdownEntry(entry){
     return { feature, score };
   }
 
-  return { feature: "", score: 0 };
+  return { feature: "", value: null, score: 0 };
 }
 
 function renderScoreBreakdown(breakdown){
@@ -1044,11 +1423,15 @@ function renderScoreBreakdown(breakdown){
     const colorClass = positive ? "positive" : "negative";
     const value = `${positive ? "+" : ""}${item.score}`;
     const strength = Math.max(8, Math.round((Math.abs(Number(item.score) || 0) / maxAbs) * 100));
+    const detailHTML = item.value && item.value !== "Not available"
+      ? `<div class="breakdown-value"><span class="breakdown-value-label">Value:</span>${escapeHTML(item.value)}</div>`
+      : "";
 
     return `
       <div class="breakdown-row ${colorClass}">
         <div class="breakdown-main">
           <span class="breakdown-feature truncate">${item.feature}</span>
+          ${detailHTML}
           <div class="breakdown-track"><span class="breakdown-fill ${colorClass}" style="width:${strength}%"></span></div>
         </div>
         <span class="breakdown-points">${value}</span>
@@ -1057,8 +1440,104 @@ function renderScoreBreakdown(breakdown){
   }).join("");
 }
 
+function formatFeatureName(name){
+  return String(name ?? "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, char => char.toUpperCase());
+}
+
+function formatFeatureValue(value){
+  if (value == null || value === "") return "Not available";
+  if (Array.isArray(value)) {
+    const items = value.map(item => String(item ?? "").trim()).filter(Boolean);
+    return items.length ? items.join(", ") : "Not available";
+  }
+  if (typeof value === "object") {
+    const entries = Object.entries(value);
+    return entries.length ? JSON.stringify(value) : "Not available";
+  }
+  return String(value);
+}
+
+function normalizeFeatureEntries(features){
+  if (!features || typeof features !== "object" || Array.isArray(features)) {
+    return [];
+  }
+
+  return Object.entries(features).map(([name, entry]) => {
+    const data = entry && typeof entry === "object" && !Array.isArray(entry)
+      ? entry
+      : { value: entry };
+    const source = String(data.source ?? "unknown").trim() || "unknown";
+    const confidenceValue = Number(data.confidence);
+
+    return {
+      displayName: formatFeatureName(name),
+      value: formatFeatureValue(data.value),
+      source,
+      sourceLabel: source.toUpperCase(),
+      isLLM: source.toLowerCase() === "llm",
+      confidence: Number.isFinite(confidenceValue) ? `${Math.round(confidenceValue * 100)}%` : null,
+      evidence: data.evidence == null || data.evidence === "" ? null : String(data.evidence)
+    };
+  });
+}
+
+function renderFeaturesTooltip(features, completionPercent){
+  const items = normalizeFeatureEntries(features);
+
+  if (!items.length) {
+    return `
+      <div class="feature-list">
+        <div class="feature-summary">
+          <span class="feature-summary-label">Extraction Completion</span>
+          <span class="feature-summary-value">${completionPercent}%</span>
+        </div>
+        <div class="empty-text">No feature details available.</div>
+      </div>
+    `;
+  }
+
+  const rows = items.map(item => {
+    const lines = [
+      `<div class="feature-line"><span class="feature-label">Value</span><span class="feature-value">${escapeHTML(item.value)}</span></div>`
+    ];
+
+    if (item.isLLM && item.confidence) {
+      lines.push(`<div class="feature-line"><span class="feature-label">Confidence</span><span class="feature-value">${escapeHTML(item.confidence)}</span></div>`);
+    }
+
+    if (item.isLLM && item.evidence) {
+      lines.push(`<div class="feature-line"><span class="feature-label">Evidence</span><span class="feature-value">${escapeHTML(item.evidence)}</span></div>`);
+    }
+
+    return `
+      <div class="feature-row">
+        <div class="feature-heading">
+          <span class="feature-name">${escapeHTML(item.displayName)}</span>
+          <span class="feature-source-pill${item.isLLM ? ' llm' : ''}">${escapeHTML(item.sourceLabel)}</span>
+        </div>
+        ${lines.join("")}
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="feature-list">
+      <div class="feature-summary">
+        <span class="feature-summary-label">Extraction Completion</span>
+        <span class="feature-summary-value">${completionPercent}%</span>
+      </div>
+      ${rows}
+    </div>
+  `;
+}
+
 function setStatus(){
-  document.getElementById("status").textContent = `Showing ${filtered.length} of ${properties.length} properties`;
+  const demoHint = DEMO_MODE ? " (Demo mode: on)" : "";
+  document.getElementById("status").textContent = `Showing ${filtered.length} of ${properties.length} properties${demoHint}`;
 }
 
 function initMap(){
@@ -1143,8 +1622,9 @@ async function loadData(){
   const res = await fetch(DATA_URL);
   const data = await res.json();
 
-  properties = Object.values(data || {});
+  properties = buildDemoFixtures(Object.values(data || {}));
   filtered = [...properties];
+  computeTopPickSet(properties, 3);
 
   populateLocations();
   applyFilters();
@@ -1226,15 +1706,24 @@ function render(){
 
     const thumb = p.thumbnail || "https://via.placeholder.com/300x200";
     const scorePercent = getScorePercent(p);
-    const completionPercent = Math.max(0, Math.min(100, Math.round(Number(p.extraction_completeness) || 0)));
-    const scoreBreakdown = renderScoreBreakdown(p.score_breakdown);
+    const completionPercent = getExtractionCompletionPercent(p);
+    const scoreBreakdownHTML = renderScoreBreakdown(p.score_breakdown);
+    const featuresHTML = renderFeaturesTooltip(p.features, completionPercent);
+    const statusDisplay = getStatusDisplay(p);
+    const priceChange = getPriceChangeDisplay(p);
+    const priceChangeHTML = renderPriceChangeHTML(priceChange);
+    const wasHTML = (priceChange && priceChange.previousPrice != null && (priceChange.direction === "up" || priceChange.direction === "down"))
+      ? `(was ${formatPrice(priceChange.previousPrice)})`
+      : "";
+
+    if(statusDisplay.isExpired) d.classList.add("expired-card");
 
     if(viewMode === 'grid'){
       d.innerHTML = `
         <div class="card-image-wrap">
           <div class="badge-stack">
-            ${isNew(p.first_seen) ? '<div class="badge new">New</div>' : '<span></span>'}
-            ${isTopScore(scorePercent) ? '<div class="badge top">Top Pick</div>' : ''}
+            ${statusDisplay.isExpired ? '<div class="badge expired" role="status" aria-label="This listing has expired">Expired</div>' : (isNew(p.first_seen) ? '<div class="badge new">New</div>' : '<span></span>')}
+            ${isTopPick(p) ? '<div class="badge top">Top Pick</div>' : ''}
           </div>
 
           <img src="${thumb}" class="card-image"
@@ -1244,8 +1733,11 @@ function render(){
         <div class="card-content">
           <div class="card-header">
             <h3 class="property-title truncate">${p.location||'Unknown Property'}</h3>
-            <p class="property-price">${formatPrice(p.price)}</p>
-            <p class="property-sub">${p.source_location||'-'}</p>
+            <div class="price-row">
+              <p class="property-price">${formatPrice(p.price)}${wasHTML ? ` <span class="price-was" aria-label="Previous price">${wasHTML}</span>` : ''}</p>
+              ${priceChangeHTML}
+            </div>
+            <p class="property-sub">${p.source_location||'-'}${statusDisplay.isExpired && statusDisplay.date ? `·<span class="expired-date">Expired ${statusDisplay.date}</span>` : ''}</p>
           </div>
 
           <div class="property-meta">
@@ -1258,19 +1750,33 @@ function render(){
           <div class="meta-row">
             <div class="meta-item truncate">
               <span class="meta-k">First Seen:</span>${formatDateTime(p.first_seen)}
+              <div class="meta-sub"><span class="meta-k">Last Seen:</span>${formatDateTime(p.last_seen)}</div>
               <div class="meta-sub">Extraction Completion: ${completionPercent}%</div>
             </div>
-            <div class="score-wrap" onclick="event.stopPropagation();">
-            <button type="button" class="score-button" onclick="toggleScoreBreakdown(event, this)" aria-expanded="false">
-              <span>Score Breakdown</span>
-              <span class="score-button-value">${scorePercent}%</span>
-            </button>
-            <div class="score-tooltip">
-              <div class="score-tooltip-inner">
-                ${scoreBreakdown}
+            <div class="detail-controls" onclick="event.stopPropagation();">
+              <div class="score-wrap">
+                <button type="button" class="score-button" onclick="toggleScoreBreakdown(event, this)" aria-expanded="false">
+                  <span>Features</span>
+                  <span class="score-button-value">${completionPercent}%</span>
+                </button>
+                <div class="score-tooltip feature-tooltip">
+                  <div class="score-tooltip-inner">
+                    ${featuresHTML}
+                  </div>
+                </div>
+              </div>
+              <div class="score-wrap">
+                <button type="button" class="score-button" onclick="toggleScoreBreakdown(event, this)" aria-expanded="false">
+                  <span>Score Breakdown</span>
+                  <span class="score-button-value">${scorePercent}%</span>
+                </button>
+                <div class="score-tooltip">
+                  <div class="score-tooltip-inner">
+                    ${scoreBreakdownHTML}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
           </div>
 
           <button onclick="window.open('${p.link}','_blank');event.stopPropagation();"
@@ -1282,8 +1788,9 @@ function render(){
     } else {
       d.innerHTML = `
         <div class="badge-stack list-badges">
-          ${isTopScore(scorePercent) ? '<div class="badge top">Top Pick</div>' : ''}
+          ${isTopPick(p) ? '<div class="badge top">Top Pick</div>' : ''}
           ${isNew(p.first_seen) ? '<div class="badge new">New</div>' : ''}
+          ${statusDisplay.isExpired ? '<div class="badge expired" role="status" aria-label="This listing has expired">Expired</div>' : ''}
         </div>
 
         <div class="list-layout">
@@ -1295,8 +1802,11 @@ function render(){
 
           <div class="list-main">
             <h3 class="truncate">${p.location||'Unknown Property'}</h3>
-            <p class="list-price">${formatPrice(p.price)}</p>
-            <p class="truncate">${p.source_location||'-'}</p>
+            <div class="price-row">
+              <p class="list-price">${formatPrice(p.price)}${wasHTML ? ` <span class="price-was" aria-label="Previous price">${wasHTML}</span>` : ''}</p>
+              ${priceChangeHTML}
+            </div>
+            <p class="truncate">${p.source_location||'-'}${statusDisplay.isExpired && statusDisplay.date ? ` · <span class="expired-date">Expired ${statusDisplay.date}</span>` : ''}</p>
 
             <div class="list-details">
               <div class="list-detail-item"><span class="list-label">Beds</span><span class="list-value">${p.beds||'-'}</span></div>
@@ -1308,27 +1818,38 @@ function render(){
             <div class="list-meta-row">
               <div class="list-meta-main truncate">
                 <span class="meta-k">First Seen:</span>${formatDateTime(p.first_seen)}
+                <div class="list-meta-sub"><span class="meta-k">Last Seen:</span>${formatDateTime(p.last_seen)}</div>
                 <div class="list-meta-sub">Extraction Completion: ${completionPercent}%</div>
               </div>
-              <div class="score-wrap" onclick="event.stopPropagation();">
-                <button type="button" class="score-button" onclick="toggleScoreBreakdown(event, this)" aria-expanded="false">
-                  <span>Score Breakdown</span>
-                  <span class="score-button-value">${scorePercent}%</span>
-                </button>
-                <div class="score-tooltip">
-                  <div class="score-tooltip-inner">
-                    ${scoreBreakdown}
+              <div class="detail-controls list-detail-controls" onclick="event.stopPropagation();">
+                <div class="score-wrap">
+                  <button type="button" class="score-button" onclick="toggleScoreBreakdown(event, this)" aria-expanded="false">
+                    <span>Features</span>
+                    <span class="score-button-value">${completionPercent}%</span>
+                  </button>
+                  <div class="score-tooltip feature-tooltip">
+                    <div class="score-tooltip-inner">
+                      ${featuresHTML}
+                    </div>
                   </div>
                 </div>
+                <div class="score-wrap">
+                  <button type="button" class="score-button" onclick="toggleScoreBreakdown(event, this)" aria-expanded="false">
+                    <span>Score Breakdown</span>
+                    <span class="score-button-value">${scorePercent}%</span>
+                  </button>
+                  <div class="score-tooltip">
+                    <div class="score-tooltip-inner">
+                      ${scoreBreakdownHTML}
+                    </div>
+                  </div>
+                </div>
+                <button onclick="window.open('${p.link}','_blank');event.stopPropagation();"
+                  class="view-button">
+                  View Listing
+                </button>
               </div>
             </div>
-          </div>
-
-          <div class="list-aside">
-            <button onclick="window.open('${p.link}','_blank');event.stopPropagation();"
-              class="view-button">
-              View Listing
-            </button>
           </div>
 
         </div>
@@ -1459,10 +1980,24 @@ function metricCircleInline(v, label){
 function applyFilters(){
   const sort=document.getElementById("sortBy").value;
   const loc=document.getElementById("locationFilter").value;
+  const status=document.getElementById("statusFilter").value;
+  const movement=document.getElementById("priceMovement").value;
 
-  filtered = properties.filter(p=>
-    (!loc || p.source_location===loc)
-  );
+  filtered = properties.filter(p=>{
+    if (loc && p.source_location !== loc) return false;
+    const pStatus = p.status || "active";
+    if (status !== "all" && pStatus !== status) return false;
+    if (movement) {
+      const pcd = getPriceChangeDisplay(p);
+      const dir = pcd ? pcd.direction : null;
+      if (movement === "none") {
+        if (dir != null) return false;
+      } else {
+        if (dir !== movement) return false;
+      }
+    }
+    return true;
+  });
 
   filtered.sort((a,b)=>{
     switch(sort){
